@@ -1,10 +1,14 @@
 extern crate clap;
-
 use clap::{App, ArgMatches};
 use self::clap::{AppSettings, Arg, SubCommand};
+use crate::shared_types::{MetricsConfig, Verbosity};
 
 pub enum CliCommand {
     About,
+    Contributors,
+    BasFactor,
+    Metrics(MetricsConfig),
+    Recommend,
     Nothing
 }
 
@@ -57,6 +61,17 @@ pub fn capture_input() -> App<'static, 'static> {
                 .required(true)
                 .default_value("./")
                 .index(1)))
+        // COMMAND: CONTRIBUTOR
+        .subcommand(SubCommand::with_name("metrics")
+            .about("Gathers code metrics on repository")
+            .version("0.1")
+            .author("Devon B. <devon@chimplab.co>")
+            // ARG: SOURCE CODE REPOSITORY
+            .arg(Arg::with_name("SOURCE")
+                .help("Sets the input path of source code to use")
+                .required(true)
+                .default_value("./")
+                .index(1)))
         // COMMAND: ABOUT
         .subcommand(SubCommand::with_name("about")
             .about("Tells more about the CLI tool"))
@@ -65,9 +80,33 @@ pub fn capture_input() -> App<'static, 'static> {
     app
 }
 
+fn verbosity(input: ArgMatches) -> Verbosity {
+    let verbosity : Verbosity =
+        match input.occurrences_of("v") {
+            0 => Verbosity::Error,
+            1 => Verbosity::Info,
+            2 => Verbosity::Debug,
+            3 => Verbosity::Trace,
+            _ => if input.is_present("silent") { Verbosity::Silent } else { Verbosity::Trace }
+        };
+    verbosity
+}
+
 pub fn parse(arg_matches: ArgMatches) -> CliCommand {
     if arg_matches.subcommand_matches("about").is_some() {
         CliCommand::About
+    }
+    else if arg_matches.subcommand_matches("metrics").is_some() {
+        let cmd_matches = arg_matches.subcommand_matches("metrics").unwrap();
+        CliCommand::Metrics(
+            MetricsConfig{
+                repository_path: String::from(cmd_matches.value_of("SOURCE").unwrap()),
+                verbosity: verbosity(arg_matches),
+                output: "".to_string(),
+                includes: "".to_string(),
+                excludes: "".to_string(),
+            }
+        )
     }
     else {
         CliCommand::Nothing

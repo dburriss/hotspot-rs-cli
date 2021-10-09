@@ -1,6 +1,9 @@
 mod shared_types;
 mod cli_command;
 mod about;
+mod repository;
+mod contributors;
+mod metrics;
 
 use crate::cli_command::CliCommand;
 
@@ -10,13 +13,19 @@ fn main() {
     let command = cli_command::parse(matches);
 
     match command  {
-        CliCommand::About => {
-            about::execute();
-        },
         CliCommand::Nothing => {
             // Help will be printed by default.
             ()
         }
+        CliCommand::About => {
+            about::execute();
+        },
+        CliCommand::Contributors => {}
+        CliCommand::BasFactor => {}
+        CliCommand::Metrics(config) => {
+            metrics::execute(config);
+        }
+        CliCommand::Recommend => {}
     };
 
 //     // Gets a value for config if supplied by user, or defaults to "default.conf"

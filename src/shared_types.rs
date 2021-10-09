@@ -4,6 +4,7 @@ use core::fmt;
 #[derive(Debug)]
 pub enum Verbosity {
     Silent,
+    Error,
     Info,
     Debug,
     Trace
@@ -17,11 +18,10 @@ impl fmt::Display for Verbosity {
 
 #[allow(dead_code)]
 // TODO: A context object that is told about each step starting, ending, progress, etc.
-struct BaseConfig {
-    operation: String,
-    repository_path: String,
-    verbosity: Verbosity,
-    output: String,
-    includes: String,
-    excludes: String
+pub struct MetricsConfig {
+    pub repository_path: String,
+    pub verbosity: Verbosity,
+    pub output: String,
+    pub includes: String,
+    pub excludes: String
 }
