@@ -1,5 +1,9 @@
 extern crate clap;
+
+use std::env;
+use std::path::{Path, PathBuf};
 use clap::{App, ArgMatches};
+use path_absolutize::Absolutize;
 use self::clap::{AppSettings, Arg, SubCommand};
 use crate::shared_types::{MetricsConfig, Verbosity};
 
@@ -92,6 +96,25 @@ fn verbosity(input: ArgMatches) -> Verbosity {
     verbosity
 }
 
+pub fn repository_path(source: Option<&str>) -> String {
+    let current_dir = env::current_dir().unwrap();
+    match source {
+        Some(s) => {
+            let base_dir = Path::new(s);
+            let display_path = if base_dir.is_absolute() {
+                base_dir.to_path_buf()
+            } else {
+                current_dir.join(base_dir)
+            };
+            String::from(display_path.absolutize().unwrap().to_str().unwrap())
+        },
+        None => {
+            String::from(current_dir.absolutize().unwrap().to_str().unwrap())
+        }
+    }
+
+}
+
 pub fn parse(arg_matches: ArgMatches) -> CliCommand {
     if arg_matches.subcommand_matches("about").is_some() {
         CliCommand::About
@@ -100,7 +123,7 @@ pub fn parse(arg_matches: ArgMatches) -> CliCommand {
         let cmd_matches = arg_matches.subcommand_matches("metrics").unwrap();
         CliCommand::Metrics(
             MetricsConfig{
-                repository_path: String::from(cmd_matches.value_of("SOURCE").unwrap()),
+                repository_path: repository_path(cmd_matches.value_of("SOURCE")),
                 verbosity: verbosity(arg_matches),
                 output: "".to_string(),
                 includes: "".to_string(),
