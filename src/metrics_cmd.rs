@@ -3,8 +3,9 @@ extern crate globwalk;
 
 use std::fs;
 use std::iter::FilterMap;
-use std::path::Path;
-use rust_code_analysis::{LANG, ParserTrait, RustParser};
+use std::path::{Path, PathBuf};
+use rayon::prelude::IntoParallelRefIterator;
+use rust_code_analysis::{LANG, Parser, ParserTrait, RustCode, RustParser, TSLanguage, CodeMetricsT, FuncSpace, JavascriptParser, TypescriptParser, TsxParser, PythonParser, CppParser, JavaParser, PreprocParser};
 use self::globwalk::{DirEntry, GlobWalker, WalkError};
 
 pub fn execute(config: MetricsConfig) {
@@ -24,13 +25,23 @@ pub fn execute(config: MetricsConfig) {
     let metrics = walker.filter_map(|de| {
         let dir_entry: DirEntry = de;
         let path = dir_entry.path();
-        let m = get_metrics(files_scanned, path);
+        let m = get_metrics(path);
+        if m.is_some() {
+            files_scanned += 1;
+        }
         files_walked += 1;
         m
     });
 
     for m in metrics {
-        println!("File: {} | LoC: {}", m.path, m.loc.unwrap());
+        if m.loc.is_some() {
+            let loc = m.loc.map(|x| x.to_string()).unwrap_or(String::new());
+            let cog = m.cognitive.map(|x| x.to_string()).unwrap_or(String::new());
+            let cyc = m.cyclomatic.map(|x| x.to_string()).unwrap_or(String::new());
+            println!("{:<120} | LoC: {:<4} | Cognitive: {:<3} | Cyclomatic: {:<3}", m.path, loc, cog, cyc);
+        } else if config.verbosity.is_verbose() {
+            println!("Skipped: {}", m.path);
+        }
     }
 
     let time_taken_sec = timer.elapsed();
@@ -41,36 +52,74 @@ pub fn execute(config: MetricsConfig) {
     }
 }
 
-fn get_metrics(mut files_scanned: i32, path: &Path) -> Option<SpecificMetrics> {
-
-    let ext = path.extension().unwrap().to_str().unwrap();
-    let lang = rust_code_analysis::get_from_ext(ext);
-    let m = match lang {
-        Some(LANG::Rust) => {
-            let contentsOpt = fs::read(path);
-            if contentsOpt.is_ok() {
-                let contents = fs::read(path).unwrap();
-                let path_buf = path.to_path_buf();
-                let parser = RustParser::new(contents, &path_buf, None);
-                let metrics = rust_code_analysis::metrics(&parser, &path_buf);
-                let p = path.to_str().map(|s| { String::from(s) }).unwrap();
-                files_scanned += 1;
-                let m = SpecificMetrics {
+fn get_metrics(path: &Path) -> Option<SpecificMetrics> {
+    let contentsOpt = fs::read(path);
+    if contentsOpt.is_ok() {
+        let contents = contentsOpt.unwrap();
+        let path_buf = path.to_path_buf();
+        let metrics = get_function_space(contents, &path_buf);
+        let p = path.to_str().map(|s| { String::from(s) }).unwrap();
+        let m = match metrics {
+            Some(function_space) => {
+                SpecificMetrics {
                     path: p,
-                    loc: metrics.map(|x| x.metrics.loc.sloc() as i64),
+                    loc: Some(function_space.metrics.loc.sloc() as i64),
+                    cognitive: Some(function_space.metrics.cognitive.cognitive() as i64),
+                    cyclomatic: Some(function_space.metrics.cyclomatic.cyclomatic() as i64)
+                }
+            },
+            None => {
+                SpecificMetrics {
+                    path: p,
+                    loc: None,
                     cognitive: None,
-                    complexity: None
-                };
-                Some(m)
-            } else { None }
+                    cyclomatic: None
+                }
+            }
+        };
+        Some(m)
+    } else { None }
+}
+
+fn get_function_space(contents: Vec<u8>, path_buf: &PathBuf) -> Option<FuncSpace>{
+    let ext = path_buf.extension().unwrap().to_str().unwrap();
+    let lang = rust_code_analysis::get_from_ext(ext);
+    match lang {
+        Some(LANG::Rust) => {
+            let parser = RustParser::new(contents, &path_buf, None);
+            rust_code_analysis::metrics(&parser, path_buf)
         },
-        _ => None
-    };
-    m
+        Some(LANG::Javascript) | Some(LANG::Mozjs) => {
+            let parser = JavascriptParser::new(contents, &path_buf, None);
+            rust_code_analysis::metrics(&parser, path_buf)
+        },
+        Some(LANG::Typescript) => {
+            let parser = TypescriptParser::new(contents, &path_buf, None);
+            rust_code_analysis::metrics(&parser, path_buf)
+        },
+        Some(LANG::Tsx) => {
+            let parser = TsxParser::new(contents, &path_buf, None);
+            rust_code_analysis::metrics(&parser, path_buf)
+        },
+        Some(LANG::Python) => {
+            let parser = PythonParser::new(contents, &path_buf, None);
+            rust_code_analysis::metrics(&parser, path_buf)
+        },
+        Some(LANG::Cpp) => {
+            let parser = CppParser::new(contents, &path_buf, None);
+            rust_code_analysis::metrics(&parser, path_buf)
+        },
+        Some(LANG::Java) => {
+            let parser = PreprocParser::new(contents, &path_buf, None);
+            rust_code_analysis::metrics(&parser, path_buf)
+        },
+        Some(_) => None,
+        None => None
+    }
 }
 
 fn setup_file_walker(base_dir: &Path) -> FilterMap<GlobWalker, fn(Result<DirEntry, WalkError>) -> Option<DirEntry>> {
-    globwalk::GlobWalkerBuilder::from_patterns(base_dir, &["*.{cs,c,cpp,fs,go,js,java,py,rs,ts,tsx}", "!.*", "!**target/*"])
+    globwalk::GlobWalkerBuilder::from_patterns(base_dir, &["*.{cs,c,cpp,fs,go,js,java,py,rs,ts,tsx}", "!.*", "!**/node_modules/**", "!**target/*"])
         .build()
         .unwrap()
         .into_iter()
