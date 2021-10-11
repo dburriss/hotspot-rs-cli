@@ -85,8 +85,9 @@ pub fn capture_input() -> App<'static, 'static> {
 }
 
 fn verbosity(input: ArgMatches) -> Verbosity {
+    let occurrences = input.occurrences_of("verbosity");
     let verbosity : Verbosity =
-        match input.occurrences_of("v") {
+        match occurrences {
             0 => Verbosity::Error,
             1 => Verbosity::Info,
             2 => Verbosity::Debug,
