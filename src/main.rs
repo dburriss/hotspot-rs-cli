@@ -21,7 +21,7 @@ fn main() {
             about_cmd::execute();
         },
         CliCommand::Contributors => {}
-        CliCommand::BasFactor => {}
+        CliCommand::BusFactor => {}
         CliCommand::Metrics(config) => {
             metrics_cmd::execute(config);
         }

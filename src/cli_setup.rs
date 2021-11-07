@@ -10,7 +10,7 @@ use crate::shared_types::{MetricsConfig, Verbosity};
 pub enum CliCommand {
     About,
     Contributors,
-    BasFactor,
+    BusFactor,
     Metrics(MetricsConfig),
     Recommend,
     Nothing

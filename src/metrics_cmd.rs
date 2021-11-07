@@ -53,9 +53,9 @@ pub fn execute(config: MetricsConfig) {
 }
 
 fn get_metrics(path: &Path) -> Option<SpecificMetrics> {
-    let contentsOpt = fs::read(path);
-    if contentsOpt.is_ok() {
-        let contents = contentsOpt.unwrap();
+    let contents_opt = fs::read(path);
+    if contents_opt.is_ok() {
+        let contents = contents_opt.unwrap();
         let path_buf = path.to_path_buf();
         let metrics = get_function_space(contents, &path_buf);
         let p = path.to_str().map(|s| { String::from(s) }).unwrap();
@@ -63,7 +63,7 @@ fn get_metrics(path: &Path) -> Option<SpecificMetrics> {
             Some(function_space) => {
                 SpecificMetrics {
                     path: p,
-                    loc: Some(function_space.metrics.loc.sloc() as i64),
+                    loc: Some(function_space.metrics.loc.lloc() as i64),
                     cognitive: Some(function_space.metrics.cognitive.cognitive() as i64),
                     cyclomatic: Some(function_space.metrics.cyclomatic.cyclomatic() as i64)
                 }
