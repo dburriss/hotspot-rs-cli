@@ -4,6 +4,7 @@ mod about_cmd;
 mod repository;
 mod contributors;
 mod metrics_cmd;
+mod contributors_cmd;
 
 use crate::cli_setup::CliCommand;
 
@@ -20,7 +21,9 @@ fn main() {
         CliCommand::About => {
             about_cmd::execute();
         },
-        CliCommand::Contributors => {}
+        CliCommand::Contributors(config) => {
+            contributors_cmd::execute(config)
+        }
         CliCommand::BusFactor => {}
         CliCommand::Metrics(config) => {
             metrics_cmd::execute(config);

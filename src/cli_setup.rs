@@ -5,16 +5,21 @@ use std::path::{Path, PathBuf};
 use clap::{App, ArgMatches};
 use path_absolutize::Absolutize;
 use self::clap::{AppSettings, Arg, SubCommand};
-use crate::shared_types::{MetricsConfig, Verbosity};
+use crate::shared_types::{ContributorsConfig, MetricsConfig, Verbosity};
 
 pub enum CliCommand {
     About,
-    Contributors,
+    Contributors(ContributorsConfig),
     BusFactor,
     Metrics(MetricsConfig),
     Recommend,
     Nothing
 }
+
+
+const ABOUT_CMD : &str = "about";
+const METRICS_CMD : &str = "metrics";
+const CONTRIBUTOR_CMD : &str = "contributors";
 
 pub fn capture_input() -> App<'static, 'static> {
     // NOTE: Setting Arg::default_value effectively disables this option as it will ensure that some argument is always present.
@@ -54,8 +59,13 @@ pub fn capture_input() -> App<'static, 'static> {
             .value_name("INCLUDE")
             .help("Glob representing explicit includes")
             .takes_value(true))
+        // COMMAND: ABOUT
+        .subcommand(SubCommand::with_name(ABOUT_CMD)
+            .about("Tells more about the CLI tool")
+            .version("0.1")
+            .author("Devon B. <devon@chimplab.co>"))
         // COMMAND: CONTRIBUTOR
-        .subcommand(SubCommand::with_name("contributors")
+        .subcommand(SubCommand::with_name(CONTRIBUTOR_CMD)
             .about("Gathers statistics on repository contributors")
             .version("0.1")
             .author("Devon B. <devon@chimplab.co>")
@@ -65,8 +75,8 @@ pub fn capture_input() -> App<'static, 'static> {
                 .required(true)
                 .default_value("./")
                 .index(1)))
-        // COMMAND: CONTRIBUTOR
-        .subcommand(SubCommand::with_name("metrics")
+        // COMMAND: METRICS
+        .subcommand(SubCommand::with_name(METRICS_CMD)
             .about("Gathers code metrics on repository")
             .version("0.1")
             .author("Devon B. <devon@chimplab.co>")
@@ -75,12 +85,7 @@ pub fn capture_input() -> App<'static, 'static> {
                 .help("Sets the input path of source code to use")
                 .required(true)
                 .default_value("./")
-                .index(1)))
-        // COMMAND: ABOUT
-        .subcommand(SubCommand::with_name("about")
-            .about("Tells more about the CLI tool"))
-        .version("0.1")
-        .author("Devon B. <devon@chimplab.co>");
+                .index(1)));
     app
 }
 
@@ -117,13 +122,26 @@ pub fn repository_path(source: Option<&str>) -> String {
 }
 
 pub fn parse(arg_matches: ArgMatches) -> CliCommand {
-    if arg_matches.subcommand_matches("about").is_some() {
+    
+    if arg_matches.subcommand_matches(ABOUT_CMD).is_some() {
         CliCommand::About
     }
-    else if arg_matches.subcommand_matches("metrics").is_some() {
-        let cmd_matches = arg_matches.subcommand_matches("metrics").unwrap();
+    else if arg_matches.subcommand_matches(METRICS_CMD).is_some() {
+        let cmd_matches = arg_matches.subcommand_matches(METRICS_CMD).unwrap();
         CliCommand::Metrics(
             MetricsConfig{
+                repository_path: repository_path(cmd_matches.value_of("SOURCE")),
+                verbosity: verbosity(arg_matches),
+                output: "".to_string(),
+                includes: "".to_string(),
+                excludes: "".to_string(),
+            }
+        )
+    }
+    else if arg_matches.subcommand_matches(CONTRIBUTOR_CMD).is_some() {
+        let cmd_matches = arg_matches.subcommand_matches(CONTRIBUTOR_CMD).unwrap();
+        CliCommand::Contributors(
+            ContributorsConfig{
                 repository_path: repository_path(cmd_matches.value_of("SOURCE")),
                 verbosity: verbosity(arg_matches),
                 output: "".to_string(),

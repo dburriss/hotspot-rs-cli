@@ -47,9 +47,16 @@ impl Verbosity {
     }
 }
 
-#[allow(dead_code)]
 // TODO: A context object that is told about each step starting, ending, progress, etc.
 pub struct MetricsConfig {
+    pub repository_path: String,
+    pub verbosity: Verbosity,
+    pub output: String,
+    pub includes: String,
+    pub excludes: String
+}
+
+pub struct ContributorsConfig {
     pub repository_path: String,
     pub verbosity: Verbosity,
     pub output: String,
