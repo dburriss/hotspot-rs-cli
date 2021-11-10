@@ -33,16 +33,20 @@ pub fn execute(config: MetricsConfig) {
         m
     });
 
+    println!( "| {:-<120} | {:-<4} | {:-<9} | {:-<10} |", "", "", "", "" );
+    println!( "| {: <120} | {:4} | {:9} | {:10} |", "File", "LoC", "Cognitive", "Cyclomatic" );
+    println!( "| {:=<120} | {:=<4} | {:=<9} | {:-<10} |", "", "", "", "" );
     for m in metrics {
         if m.loc.is_some() {
             let loc = m.loc.map(|x| x.to_string()).unwrap_or(String::new());
             let cog = m.cognitive.map(|x| x.to_string()).unwrap_or(String::new());
             let cyc = m.cyclomatic.map(|x| x.to_string()).unwrap_or(String::new());
-            println!("{:<120} | LoC: {:<4} | Cognitive: {:<3} | Cyclomatic: {:<3}", m.path, loc, cog, cyc);
+            println!("| {:<120} | {:<4} | {:<9} | {:<10} |", m.path, loc, cog, cyc);
         } else if config.verbosity.is_verbose() {
             println!("Skipped: {}", m.path);
         }
     }
+    println!( "| {:-<120} | {:-<4} | {:-<9} | {:-<10} |", "", "", "", "" );
 
     let time_taken_sec = timer.elapsed();
     if config.verbosity.is_not_quiet() {

@@ -92,6 +92,7 @@ pub fn execute(config: ContributorsConfig) {
         let _ = *contributor_files.entry(key).or_insert(HashSet::new());
     }
 
+    println!( "| {:-<70} | {:-<7} | {:-<13} |", "", "", "" );
     println!( "| {: <70} | {:7} | {:13} |", "Contributor", "Commits", "Files touched" );
     println!( "| {:=<70} | {:=<7} | {:=<13} |", "", "", "" );
     for k in contributors.keys() {
@@ -100,6 +101,6 @@ pub fn execute(config: ContributorsConfig) {
             "| {: <70} | {:7} | {:13} |", contributor, contributors[k], contributor_files[k].len()
         );
     }
-    println!( "| {:=<70} | {:=<7} | {:=<13} |", "", "", "" );
+    println!( "| {:-<70} | {:-<7} | {:-<13} |", "", "", "" );
     println!("Total commits: {}", i);
 }
