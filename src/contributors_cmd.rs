@@ -1,4 +1,4 @@
-use crate::shared_types::{ContributorsConfig};
+use crate::shared_types::{ContributorsConfig, truncate};
 use std::fmt::Display;
 use std::path::{Path};
 use std::collections::{HashMap, HashSet};
@@ -96,7 +96,7 @@ pub fn execute(config: ContributorsConfig) {
     println!( "| {: <70} | {:7} | {:13} |", "Contributor", "Commits", "Files touched" );
     println!( "| {:=<70} | {:=<7} | {:=<13} |", "", "", "" );
     for k in contributors.keys() {
-        let contributor = k.to_string();
+        let contributor = truncate(k.to_string(), 70);
         println!(
             "| {: <70} | {:7} | {:13} |", contributor, contributors[k], contributor_files[k].len()
         );

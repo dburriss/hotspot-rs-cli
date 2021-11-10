@@ -70,3 +70,22 @@ pub struct SpecificMetrics {
     pub cognitive: Option<i64>,
     pub loc: Option<i64>
 }
+
+pub fn truncate(value: String, length: usize) -> String {
+    if value.len() <= length {
+        value
+    }
+    else {
+        return format!("{1:.*}...", length - 3, value);
+    }
+}
+
+pub fn truncate_left(value: String, length: usize) -> String {
+    if value.len() <= length {
+        value
+    }
+    else {
+        let left_truncated: String = value.chars().rev().take(length - 3).collect::<String>().chars().rev().collect();
+        return format!("...{1:.*}", length - 3, left_truncated);
+    }
+}
