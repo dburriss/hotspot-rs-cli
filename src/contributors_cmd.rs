@@ -1,10 +1,45 @@
 use crate::shared_types::{ContributorsConfig};
+use std::fmt::Display;
 use std::path::{Path};
 use std::collections::{HashMap, HashSet};
+use std::hash::{Hash, Hasher};
 use git2::{Repository};
 // maybe this? https://docs.rs/git2/0.13.22/git2/struct.Repository.html#method.revwalk
 // get files see code here: https://github.com/rust-lang/git2-rs/issues/588#issuecomment-856757971
 // C# impl https://github.com/libgit2/libgit2sharp/pull/963/files
+
+#[derive(Debug,Clone)]
+struct ContributorKey {
+    email: String,
+    name: String
+}
+
+impl ContributorKey {
+    fn new(email: String, name: String) -> Self {
+        Self { email, name }
+    }
+}
+
+impl Hash for ContributorKey {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.email.hash(state);
+    }
+}
+
+impl PartialEq for ContributorKey {
+    fn eq(&self, other: &Self) -> bool {
+        self.email == other.email
+    }
+}
+
+impl Eq for ContributorKey {}
+
+impl Display for ContributorKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> { 
+        write!(f, "{}<{}>", self.name, self.email)
+    }
+}
+
 
 pub fn execute(config: ContributorsConfig) {
     let base_dir = Path::new(&config.repository_path);
@@ -12,8 +47,8 @@ pub fn execute(config: ContributorsConfig) {
         Ok(repo) => repo,
         Err(e) => panic!("failed to open: {}", e),
     };
-    let mut contributors : HashMap<String,u32> = HashMap::new();
-    let mut contributor_files : HashMap<String,HashSet<String>> = HashMap::new();
+    let mut contributors : HashMap<ContributorKey,u32> = HashMap::new();
+    let mut contributor_files : HashMap<ContributorKey,HashSet<String>> = HashMap::new();
     let mut rev_walk = repo.revwalk().unwrap();
     //rev_walk.simplify_first_parent().unwrap();
     rev_walk.push_head().unwrap();
@@ -23,10 +58,14 @@ pub fn execute(config: ContributorsConfig) {
         let commit = repo.find_commit(oid).unwrap();
         
         let author = commit.author();
+        let name = author.name().unwrap();
         let email = author.email().unwrap();
-        let h = oid.to_string();
-        //println!("{} {}", h, commit.summary().unwrap());
-        // could use tree to get files?
+        let key = ContributorKey::new(email.to_string(), name.to_string());
+        let parent_count = commit.parent_count();
+        if parent_count == 0 || parent_count == 1 {
+
+        }
+
         if commit.parent_count() == 0 {
             let tree = commit.tree().unwrap();
             let prev_tree = None;
@@ -36,7 +75,7 @@ pub fn execute(config: ContributorsConfig) {
                 let file_mod_time = commit.time();
                 let unix_time = file_mod_time.seconds();
                 //println!("{} modified at {}", file_path.to_str().unwrap(), unix_time);
-                let h = contributor_files.entry(email.to_string()).or_insert(HashSet::new());
+                let h = contributor_files.entry(key.clone()).or_insert(HashSet::new());
                 h.insert(file_path.to_str().unwrap().to_string());
             }
         }
@@ -50,46 +89,21 @@ pub fn execute(config: ContributorsConfig) {
                 let file_mod_time = commit.time();
                 let unix_time = file_mod_time.seconds();
                 //println!("{} modified at {}", file_path.to_str().unwrap(), unix_time);
-                let h = contributor_files.entry(email.to_string()).or_insert(HashSet::new());
+                let h = contributor_files.entry(key.clone()).or_insert(HashSet::new());
                 h.insert(file_path.to_str().unwrap().to_string());
             }
         }
         i = i + 1;
-        *contributors.entry(email.to_string()).or_insert(0) += 1;
-        let _ = *contributor_files.entry(email.to_string()).or_insert(HashSet::new());
+        *contributors.entry(key.clone()).or_insert(0) += 1;
+        let _ = *contributor_files.entry(key).or_insert(HashSet::new());
     }
 
     for k in contributors.keys() {
+        let cont = k.to_string();
         println!(
-            "| Contributor: {:<60} |  Commits:{:<5} | Files: {:<4} |", k, contributors[k], contributor_files[k].len()
+            "| Contributor: {: <70} |  Commits: {:5} | Files: {:4} |", cont, contributors[k], contributor_files[k].len()
         );
     }
 
     println!("Total commits: {}", i);
-}
-
-pub fn _execute(config: ContributorsConfig) {
-    let base_dir = Path::new(&config.repository_path);
-    // https://docs.rs/git2/0.13.22/git2/struct.Repository.html#method.reflog
-    let repo = match Repository::open(base_dir) {
-        Ok(repo) => repo,
-        Err(e) => panic!("failed to open: {}", e),
-    };
-    let mut contributors : HashMap<String,u32> = HashMap::new();
-    // let count = repo.references().unwrap().count();
-    // println!("References: {}", count);
-    let head =  repo.head().unwrap();
-    let logs = repo.reflog(head.name().unwrap()); // https://docs.rs/git2/0.13.22/git2/struct.Reflog.html 
-
-    logs.iter().for_each(|rlog| rlog.iter().for_each( |log_entry| { 
-        let committer = log_entry.committer();
-        let email = committer.email().unwrap().to_string();
-        *contributors.entry(email).or_insert(0) += 1;
-    }));
-
-    for k in contributors.keys() {
-        println!(
-            "{} with {} commits", k, contributors[k]
-        );
-    }
 }
