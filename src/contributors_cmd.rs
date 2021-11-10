@@ -50,7 +50,6 @@ pub fn execute(config: ContributorsConfig) {
     let mut contributors : HashMap<ContributorKey,u32> = HashMap::new();
     let mut contributor_files : HashMap<ContributorKey,HashSet<String>> = HashMap::new();
     let mut rev_walk = repo.revwalk().unwrap();
-    //rev_walk.simplify_first_parent().unwrap();
     rev_walk.push_head().unwrap();
     let mut i = 0;
     for elem in rev_walk {
@@ -63,36 +62,31 @@ pub fn execute(config: ContributorsConfig) {
         let key = ContributorKey::new(email.to_string(), name.to_string());
         let parent_count = commit.parent_count();
         if parent_count == 0 || parent_count == 1 {
-
-        }
-
-        if commit.parent_count() == 0 {
             let tree = commit.tree().unwrap();
-            let prev_tree = None;
-            let diff = repo.diff_tree_to_tree(prev_tree, Some(&tree), None).unwrap();
+            let diff =
+                if parent_count == 0 {
+                    let prev_tree = None;
+                    let diff = repo.diff_tree_to_tree(prev_tree, Some(&tree), None).unwrap();
+                    diff
+                }
+                else if parent_count == 1 {
+                    let prev_commit = commit.parent(0).unwrap();
+                    let prev_tree = prev_commit.tree().unwrap();
+                    let diff = repo.diff_tree_to_tree(Some(&prev_tree), Some(&tree), None).unwrap();
+                    diff
+                }
+                else {
+                    panic!("`parent_count` unexpectedly {}", parent_count);
+                };
             for delta in diff.deltas() {
                 let file_path = delta.new_file().path().unwrap();
                 let file_mod_time = commit.time();
                 let unix_time = file_mod_time.seconds();
-                //println!("{} modified at {}", file_path.to_str().unwrap(), unix_time);
                 let h = contributor_files.entry(key.clone()).or_insert(HashSet::new());
                 h.insert(file_path.to_str().unwrap().to_string());
             }
         }
-        if commit.parent_count() == 1 {
-            let prev_commit = commit.parent(0).unwrap();
-            let tree = commit.tree().unwrap();
-            let prev_tree = prev_commit.tree().unwrap();
-            let diff = repo.diff_tree_to_tree(Some(&prev_tree), Some(&tree), None).unwrap();
-            for delta in diff.deltas() {
-                let file_path = delta.new_file().path().unwrap();
-                let file_mod_time = commit.time();
-                let unix_time = file_mod_time.seconds();
-                //println!("{} modified at {}", file_path.to_str().unwrap(), unix_time);
-                let h = contributor_files.entry(key.clone()).or_insert(HashSet::new());
-                h.insert(file_path.to_str().unwrap().to_string());
-            }
-        }
+        
         i = i + 1;
         *contributors.entry(key.clone()).or_insert(0) += 1;
         let _ = *contributor_files.entry(key).or_insert(HashSet::new());
