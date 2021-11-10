@@ -98,12 +98,14 @@ pub fn execute(config: ContributorsConfig) {
         let _ = *contributor_files.entry(key).or_insert(HashSet::new());
     }
 
+    println!( "| {: <70} | {:7} | {:13} |", "Contributor", "Commits", "Files touched" );
+    println!( "| {:=<70} | {:=<7} | {:=<13} |", "", "", "" );
     for k in contributors.keys() {
-        let cont = k.to_string();
+        let contributor = k.to_string();
         println!(
-            "| Contributor: {: <70} |  Commits: {:5} | Files: {:4} |", cont, contributors[k], contributor_files[k].len()
+            "| {: <70} | {:7} | {:13} |", contributor, contributors[k], contributor_files[k].len()
         );
     }
-
+    println!( "| {:=<70} | {:=<7} | {:=<13} |", "", "", "" );
     println!("Total commits: {}", i);
 }
