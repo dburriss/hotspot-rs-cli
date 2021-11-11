@@ -1,20 +1,26 @@
 extern crate clap;
 
 use std::env;
-use std::path::{Path, PathBuf};
+use std::path::{Path};
 use clap::{App, ArgMatches};
 use path_absolutize::Absolutize;
 use self::clap::{AppSettings, Arg, SubCommand};
-use crate::shared_types::{MetricsConfig, Verbosity};
+use crate::shared_types::{ContributorsConfig, MetricsConfig, Verbosity};
 
 pub enum CliCommand {
     About,
-    Contributors,
-    BusFactor,
+    Contributors(ContributorsConfig),
+    //BusFactor,
     Metrics(MetricsConfig),
-    Recommend,
+    //Recommend,
     Nothing
 }
+
+
+const ABOUT_CMD : &str = "about";
+const METRICS_CMD : &str = "metrics";
+const CONTRIBUTOR_CMD : &str = "contributors";
+//const BUSFACTOR_CMD : &str = "busfactor";
 
 pub fn capture_input() -> App<'static, 'static> {
     // NOTE: Setting Arg::default_value effectively disables this option as it will ensure that some argument is always present.
@@ -24,12 +30,12 @@ pub fn capture_input() -> App<'static, 'static> {
         .version("0.1")
         .author("Devon B. <devon@chimplab.co>")
         .about("Inspect source code for those hotspots based on source code change cadence")
-        // FLAG: OUTPUT FILE
+        // FLAG: SET VERBOSITY
         .arg(Arg::with_name("verbosity")
             .short("v")
             .multiple(true)
             .help("Sets to verbose mode"))
-        // FLAG: OUTPUT FILE
+        // FLAG: SET TO SILENT
         .arg(Arg::with_name("silent")
             .short("s")
             .help("Sets to silent mode"))
@@ -54,8 +60,13 @@ pub fn capture_input() -> App<'static, 'static> {
             .value_name("INCLUDE")
             .help("Glob representing explicit includes")
             .takes_value(true))
+        // COMMAND: ABOUT
+        .subcommand(SubCommand::with_name(ABOUT_CMD)
+            .about("Tells more about the CLI tool")
+            .version("0.1")
+            .author("Devon B. <devon@chimplab.co>"))
         // COMMAND: CONTRIBUTOR
-        .subcommand(SubCommand::with_name("contributors")
+        .subcommand(SubCommand::with_name(CONTRIBUTOR_CMD)
             .about("Gathers statistics on repository contributors")
             .version("0.1")
             .author("Devon B. <devon@chimplab.co>")
@@ -65,8 +76,8 @@ pub fn capture_input() -> App<'static, 'static> {
                 .required(true)
                 .default_value("./")
                 .index(1)))
-        // COMMAND: CONTRIBUTOR
-        .subcommand(SubCommand::with_name("metrics")
+        // COMMAND: METRICS
+        .subcommand(SubCommand::with_name(METRICS_CMD)
             .about("Gathers code metrics on repository")
             .version("0.1")
             .author("Devon B. <devon@chimplab.co>")
@@ -75,12 +86,7 @@ pub fn capture_input() -> App<'static, 'static> {
                 .help("Sets the input path of source code to use")
                 .required(true)
                 .default_value("./")
-                .index(1)))
-        // COMMAND: ABOUT
-        .subcommand(SubCommand::with_name("about")
-            .about("Tells more about the CLI tool"))
-        .version("0.1")
-        .author("Devon B. <devon@chimplab.co>");
+                .index(1)));
     app
 }
 
@@ -117,11 +123,12 @@ pub fn repository_path(source: Option<&str>) -> String {
 }
 
 pub fn parse(arg_matches: ArgMatches) -> CliCommand {
-    if arg_matches.subcommand_matches("about").is_some() {
+    
+    if arg_matches.subcommand_matches(ABOUT_CMD).is_some() {
         CliCommand::About
     }
-    else if arg_matches.subcommand_matches("metrics").is_some() {
-        let cmd_matches = arg_matches.subcommand_matches("metrics").unwrap();
+    else if arg_matches.subcommand_matches(METRICS_CMD).is_some() {
+        let cmd_matches = arg_matches.subcommand_matches(METRICS_CMD).unwrap();
         CliCommand::Metrics(
             MetricsConfig{
                 repository_path: repository_path(cmd_matches.value_of("SOURCE")),
@@ -132,6 +139,23 @@ pub fn parse(arg_matches: ArgMatches) -> CliCommand {
             }
         )
     }
+    else if arg_matches.subcommand_matches(CONTRIBUTOR_CMD).is_some() {
+        let cmd_matches = arg_matches.subcommand_matches(CONTRIBUTOR_CMD).unwrap();
+        CliCommand::Contributors(
+            ContributorsConfig{
+                repository_path: repository_path(cmd_matches.value_of("SOURCE")),
+                verbosity: verbosity(arg_matches),
+                output: "".to_string(),
+                includes: "".to_string(),
+                excludes: "".to_string(),
+            }
+        )
+    }
+    // else if arg_matches.subcommand_matches(CONTRIBUTOR_CMD).is_some() {
+    //     let cmd_matches = arg_matches.subcommand_matches(CONTRIBUTOR_CMD).unwrap();
+    //     CliCommand::BusFactor();
+    //     panic!("{} not implemented", )
+    // }
     else {
         CliCommand::Nothing
     }

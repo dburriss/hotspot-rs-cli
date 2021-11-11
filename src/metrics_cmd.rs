@@ -1,11 +1,10 @@
-use crate::shared_types::{MetricsConfig, SpecificMetrics};
+use crate::shared_types::{MetricsConfig, SpecificMetrics, truncate_left};
 extern crate globwalk;
 
 use std::fs;
 use std::iter::FilterMap;
 use std::path::{Path, PathBuf};
-use rayon::prelude::IntoParallelRefIterator;
-use rust_code_analysis::{LANG, Parser, ParserTrait, RustCode, RustParser, TSLanguage, CodeMetricsT, FuncSpace, JavascriptParser, TypescriptParser, TsxParser, PythonParser, CppParser, JavaParser, PreprocParser};
+use rust_code_analysis::{LANG, ParserTrait, RustParser, FuncSpace, JavascriptParser, TypescriptParser, TsxParser, PythonParser, CppParser, PreprocParser};
 use self::globwalk::{DirEntry, GlobWalker, WalkError};
 
 pub fn execute(config: MetricsConfig) {
@@ -33,16 +32,20 @@ pub fn execute(config: MetricsConfig) {
         m
     });
 
+    println!( "| {:-<80} | {:-<6} | {:-<9} | {:-<10} |", "", "", "", "" );
+    println!( "| {: <80} | {:6} | {:9} | {:10} |", "File", "LoC", "Cognitive", "Cyclomatic" );
+    println!( "| {:=<80} | {:=<6} | {:=<9} | {:=<10} |", "", "", "", "" );
     for m in metrics {
         if m.loc.is_some() {
             let loc = m.loc.map(|x| x.to_string()).unwrap_or(String::new());
             let cog = m.cognitive.map(|x| x.to_string()).unwrap_or(String::new());
             let cyc = m.cyclomatic.map(|x| x.to_string()).unwrap_or(String::new());
-            println!("{:<120} | LoC: {:<4} | Cognitive: {:<3} | Cyclomatic: {:<3}", m.path, loc, cog, cyc);
+            println!("| {:<80} | {:<6} | {:<9} | {:<10} |", truncate_left(m.path, 80), loc, cog, cyc);
         } else if config.verbosity.is_verbose() {
             println!("Skipped: {}", m.path);
         }
     }
+    println!( "| {:-<80} | {:-<6} | {:-<9} | {:-<10} |", "", "", "", "" );
 
     let time_taken_sec = timer.elapsed();
     if config.verbosity.is_not_quiet() {
@@ -119,7 +122,7 @@ fn get_function_space(contents: Vec<u8>, path_buf: &PathBuf) -> Option<FuncSpace
 }
 
 fn setup_file_walker(base_dir: &Path) -> FilterMap<GlobWalker, fn(Result<DirEntry, WalkError>) -> Option<DirEntry>> {
-    globwalk::GlobWalkerBuilder::from_patterns(base_dir, &["*.{cs,c,cpp,fs,go,js,java,py,rs,ts,tsx}", "!.*", "!**/node_modules/**", "!**target/*"])
+    globwalk::GlobWalkerBuilder::from_patterns(base_dir, &["*.{cs,c,cpp,fs,go,js,java,py,rs,ts,tsx}", "!.*", "!node_modules/", "!target/"])
         .build()
         .unwrap()
         .into_iter()
