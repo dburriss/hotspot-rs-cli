@@ -40,7 +40,6 @@ impl Display for ContributorKey {
     }
 }
 
-
 pub fn execute(config: ContributorsConfig) {
     let base_dir = Path::new(&config.repository_path);
     let repo = match Repository::open(base_dir) {
@@ -80,8 +79,8 @@ pub fn execute(config: ContributorsConfig) {
                 };
             for delta in diff.deltas() {
                 let file_path = delta.new_file().path().unwrap();
-                let file_mod_time = commit.time();
-                let unix_time = file_mod_time.seconds();
+                //let file_mod_time = commit.time();
+                //let unix_time = file_mod_time.seconds();
                 let h = contributor_files.entry(key.clone()).or_insert(HashSet::new());
                 h.insert(file_path.to_str().unwrap().to_string());
             }

@@ -4,8 +4,7 @@ extern crate globwalk;
 use std::fs;
 use std::iter::FilterMap;
 use std::path::{Path, PathBuf};
-use rayon::prelude::IntoParallelRefIterator;
-use rust_code_analysis::{LANG, Parser, ParserTrait, RustCode, RustParser, TSLanguage, CodeMetricsT, FuncSpace, JavascriptParser, TypescriptParser, TsxParser, PythonParser, CppParser, JavaParser, PreprocParser};
+use rust_code_analysis::{LANG, ParserTrait, RustParser, FuncSpace, JavascriptParser, TypescriptParser, TsxParser, PythonParser, CppParser, PreprocParser};
 use self::globwalk::{DirEntry, GlobWalker, WalkError};
 
 pub fn execute(config: MetricsConfig) {
@@ -35,7 +34,7 @@ pub fn execute(config: MetricsConfig) {
 
     println!( "| {:-<80} | {:-<6} | {:-<9} | {:-<10} |", "", "", "", "" );
     println!( "| {: <80} | {:6} | {:9} | {:10} |", "File", "LoC", "Cognitive", "Cyclomatic" );
-    println!( "| {:=<80} | {:=<6} | {:=<9} | {:-<10} |", "", "", "", "" );
+    println!( "| {:=<80} | {:=<6} | {:=<9} | {:=<10} |", "", "", "", "" );
     for m in metrics {
         if m.loc.is_some() {
             let loc = m.loc.map(|x| x.to_string()).unwrap_or(String::new());

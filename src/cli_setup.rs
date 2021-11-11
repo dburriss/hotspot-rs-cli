@@ -1,7 +1,7 @@
 extern crate clap;
 
 use std::env;
-use std::path::{Path, PathBuf};
+use std::path::{Path};
 use clap::{App, ArgMatches};
 use path_absolutize::Absolutize;
 use self::clap::{AppSettings, Arg, SubCommand};
@@ -10,9 +10,9 @@ use crate::shared_types::{ContributorsConfig, MetricsConfig, Verbosity};
 pub enum CliCommand {
     About,
     Contributors(ContributorsConfig),
-    BusFactor,
+    //BusFactor,
     Metrics(MetricsConfig),
-    Recommend,
+    //Recommend,
     Nothing
 }
 
@@ -20,6 +20,7 @@ pub enum CliCommand {
 const ABOUT_CMD : &str = "about";
 const METRICS_CMD : &str = "metrics";
 const CONTRIBUTOR_CMD : &str = "contributors";
+//const BUSFACTOR_CMD : &str = "busfactor";
 
 pub fn capture_input() -> App<'static, 'static> {
     // NOTE: Setting Arg::default_value effectively disables this option as it will ensure that some argument is always present.
@@ -29,12 +30,12 @@ pub fn capture_input() -> App<'static, 'static> {
         .version("0.1")
         .author("Devon B. <devon@chimplab.co>")
         .about("Inspect source code for those hotspots based on source code change cadence")
-        // FLAG: OUTPUT FILE
+        // FLAG: SET VERBOSITY
         .arg(Arg::with_name("verbosity")
             .short("v")
             .multiple(true)
             .help("Sets to verbose mode"))
-        // FLAG: OUTPUT FILE
+        // FLAG: SET TO SILENT
         .arg(Arg::with_name("silent")
             .short("s")
             .help("Sets to silent mode"))
@@ -150,6 +151,11 @@ pub fn parse(arg_matches: ArgMatches) -> CliCommand {
             }
         )
     }
+    // else if arg_matches.subcommand_matches(CONTRIBUTOR_CMD).is_some() {
+    //     let cmd_matches = arg_matches.subcommand_matches(CONTRIBUTOR_CMD).unwrap();
+    //     CliCommand::BusFactor();
+    //     panic!("{} not implemented", )
+    // }
     else {
         CliCommand::Nothing
     }

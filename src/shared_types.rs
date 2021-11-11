@@ -37,6 +37,7 @@ impl Verbosity {
         }
     }
 
+    #[allow(dead_code)]
     pub fn is_informative(&self) -> bool {
         match self {
             Verbosity::Info => true,

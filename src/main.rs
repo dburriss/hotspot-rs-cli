@@ -24,10 +24,10 @@ fn main() {
         CliCommand::Contributors(config) => {
             contributors_cmd::execute(config)
         }
-        CliCommand::BusFactor => {}
+        //CliCommand::BusFactor => {}
         CliCommand::Metrics(config) => {
             metrics_cmd::execute(config);
         }
-        CliCommand::Recommend => {}
+        //CliCommand::Recommend => {}
     };
 }
