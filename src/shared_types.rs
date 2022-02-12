@@ -7,7 +7,7 @@ pub enum Verbosity {
     Error,
     Info,
     Debug,
-    Trace
+    Trace,
 }
 
 impl fmt::Display for Verbosity {
@@ -21,7 +21,7 @@ impl Verbosity {
         match self {
             Verbosity::Silent => true,
             Verbosity::Error => true,
-            _ => false
+            _ => false,
         }
     }
 
@@ -33,7 +33,7 @@ impl Verbosity {
         match self {
             Verbosity::Debug => true,
             Verbosity::Trace => true,
-            _ => false
+            _ => false,
         }
     }
 
@@ -43,7 +43,7 @@ impl Verbosity {
             Verbosity::Info => true,
             Verbosity::Debug => true,
             Verbosity::Trace => true,
-            _ => false
+            _ => false,
         }
     }
 }
@@ -54,7 +54,7 @@ pub struct MetricsConfig {
     pub verbosity: Verbosity,
     pub output: String,
     pub includes: String,
-    pub excludes: String
+    pub excludes: String,
 }
 
 pub struct ContributorsConfig {
@@ -62,21 +62,20 @@ pub struct ContributorsConfig {
     pub verbosity: Verbosity,
     pub output: String,
     pub includes: String,
-    pub excludes: String
+    pub excludes: String,
 }
 
 pub struct SpecificMetrics {
     pub path: String,
     pub cyclomatic: Option<i64>,
     pub cognitive: Option<i64>,
-    pub loc: Option<i64>
+    pub loc: Option<i64>,
 }
 
 pub fn truncate(value: String, length: usize) -> String {
     if value.len() <= length {
         value
-    }
-    else {
+    } else {
         return format!("{1:.*}...", length - 3, value);
     }
 }
@@ -84,9 +83,15 @@ pub fn truncate(value: String, length: usize) -> String {
 pub fn truncate_left(value: String, length: usize) -> String {
     if value.len() <= length {
         value
-    }
-    else {
-        let left_truncated: String = value.chars().rev().take(length - 3).collect::<String>().chars().rev().collect();
+    } else {
+        let left_truncated: String = value
+            .chars()
+            .rev()
+            .take(length - 3)
+            .collect::<String>()
+            .chars()
+            .rev()
+            .collect();
         return format!("...{1:.*}", length - 3, left_truncated);
     }
 }

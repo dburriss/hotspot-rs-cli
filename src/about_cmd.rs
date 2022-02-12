@@ -6,4 +6,3 @@ Supports: C++, C#, Go, Java, JavaScript, Python, Rust, TypeScript";
 
     println!("{}", text);
 }
-
