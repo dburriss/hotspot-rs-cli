@@ -1,7 +1,7 @@
 extern crate clap;
 
 use self::clap::{AppSettings, Arg, SubCommand};
-use crate::shared_types::{ContributorsConfig, MetricsConfig, Verbosity};
+use crate::shared_types::{BusFactorConfig, ContributorsConfig, MetricsConfig, Verbosity};
 use clap::{App, ArgMatches};
 use path_absolutize::Absolutize;
 use std::env;
@@ -9,8 +9,8 @@ use std::path::Path;
 
 pub enum CliCommand {
     About,
+    BusFactor(BusFactorConfig),
     Contributors(ContributorsConfig),
-    //BusFactor,
     Metrics(MetricsConfig),
     //Recommend,
     Nothing,
@@ -19,7 +19,7 @@ pub enum CliCommand {
 const ABOUT_CMD: &str = "about";
 const METRICS_CMD: &str = "metrics";
 const CONTRIBUTOR_CMD: &str = "contributors";
-//const BUSFACTOR_CMD : &str = "busfactor";
+const BUSFACTOR_CMD : &str = "busfactor";
 
 pub fn capture_input() -> App<'static, 'static> {
     // NOTE: Setting Arg::default_value effectively disables this option as it will ensure that some argument is always present.
@@ -75,6 +75,21 @@ pub fn capture_input() -> App<'static, 'static> {
                 .about("Tells more about the CLI tool")
                 .version("0.1")
                 .author("Devon B. <devon@chimplab.co>"),
+        )
+        // COMMAND: BUS FACTOR
+        .subcommand(
+            SubCommand::with_name(BUSFACTOR_CMD)
+                .about("Calculate bus factor of repository contributors")
+                .version("0.1")
+                .author("Devon B. <devon@chimplab.co>")
+                // ARG: SOURCE CODE REPOSITORY
+                .arg(
+                    Arg::with_name("SOURCE")
+                        .help("Sets the input path of source code to use")
+                        .required(true)
+                        .default_value("./")
+                        .index(1),
+                ),
         )
         // COMMAND: CONTRIBUTOR
         .subcommand(
@@ -143,21 +158,31 @@ pub fn repository_path(source: Option<&str>) -> String {
     }
 }
 
+/// Parses the command line arguments into the correct config object for the passed in command
 pub fn parse(arg_matches: ArgMatches) -> CliCommand {
     if arg_matches.subcommand_matches(ABOUT_CMD).is_some() {
         CliCommand::About
-    } else if arg_matches.subcommand_matches(METRICS_CMD).is_some() {
-        let cmd_matches = arg_matches.subcommand_matches(METRICS_CMD).unwrap();
-        CliCommand::Metrics(MetricsConfig {
+    } else if arg_matches.subcommand_matches(CONTRIBUTOR_CMD).is_some() {
+        let cmd_matches = arg_matches.subcommand_matches(CONTRIBUTOR_CMD).unwrap();
+        CliCommand::Contributors(ContributorsConfig {
             repository_path: repository_path(cmd_matches.value_of("SOURCE")),
             verbosity: verbosity(arg_matches),
             output: "".to_string(),
             includes: "".to_string(),
             excludes: "".to_string(),
         })
-    } else if arg_matches.subcommand_matches(CONTRIBUTOR_CMD).is_some() {
-        let cmd_matches = arg_matches.subcommand_matches(CONTRIBUTOR_CMD).unwrap();
-        CliCommand::Contributors(ContributorsConfig {
+    } else if arg_matches.subcommand_matches(BUSFACTOR_CMD).is_some() {
+        let cmd_matches = arg_matches.subcommand_matches(BUSFACTOR_CMD).unwrap();
+        CliCommand::BusFactor(BusFactorConfig {
+            repository_path: repository_path(cmd_matches.value_of("SOURCE")),
+            verbosity: verbosity(arg_matches),
+            output: "".to_string(),
+            includes: "".to_string(),
+            excludes: "".to_string(),
+        })
+    } else if arg_matches.subcommand_matches(METRICS_CMD).is_some() {
+        let cmd_matches = arg_matches.subcommand_matches(METRICS_CMD).unwrap();
+        CliCommand::Metrics(MetricsConfig {
             repository_path: repository_path(cmd_matches.value_of("SOURCE")),
             verbosity: verbosity(arg_matches),
             output: "".to_string(),

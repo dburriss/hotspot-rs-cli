@@ -1,6 +1,6 @@
 mod about_cmd;
 mod cli_setup;
-mod contributors;
+mod busfactor_cmd;
 mod contributors_cmd;
 mod metrics_cmd;
 mod repository;
@@ -22,7 +22,7 @@ fn main() {
             about_cmd::execute();
         }
         CliCommand::Contributors(config) => contributors_cmd::execute(config),
-        //CliCommand::BusFactor => {}
+        CliCommand::BusFactor(config) => busfactor_cmd::execute(config),
         CliCommand::Metrics(config) => {
             metrics_cmd::execute(config);
         } //CliCommand::Recommend => {}

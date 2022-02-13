@@ -34,13 +34,14 @@ pub fn execute(config: MetricsConfig) {
         files_walked += 1;
         m
     });
+    let time_taken_sec = timer.elapsed();
 
-    println!("| {:-<80} | {:-<6} | {:-<9} | {:-<10} |", "", "", "", "");
+    println!("+-{:-<80}---{:-<6}---{:-<9}---{:-<10}-+", "", "", "", "");
     println!(
         "| {: <80} | {:6} | {:9} | {:10} |",
         "File", "LoC", "Cognitive", "Cyclomatic"
     );
-    println!("| {:=<80} | {:=<6} | {:=<9} | {:=<10} |", "", "", "", "");
+    println!("|={:=<80}==={:=<6}==={:=<9}==={:=<10}=|", "", "", "", "");
     for m in metrics {
         if m.loc.is_some() {
             let loc = m.loc.map(|x| x.to_string()).unwrap_or(String::new());
@@ -57,9 +58,8 @@ pub fn execute(config: MetricsConfig) {
             println!("Skipped: {}", m.path);
         }
     }
-    println!("| {:-<80} | {:-<6} | {:-<9} | {:-<10} |", "", "", "", "");
+    println!("--{:-<80}---{:-<6}---{:-<9}---{:-<10}--", "", "", "", "");
 
-    let time_taken_sec = timer.elapsed();
     if config.verbosity.is_not_quiet() {
         println!("Files scanned for metrics: {}", files_scanned);
         println!("Total files matched: {}", files_walked);

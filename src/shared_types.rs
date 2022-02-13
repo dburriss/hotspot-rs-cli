@@ -1,5 +1,8 @@
 use core::fmt;
 
+use std::fmt::Display;
+use std::hash::{Hash, Hasher};
+
 #[allow(dead_code)]
 #[derive(Debug)]
 pub enum Verbosity {
@@ -65,11 +68,51 @@ pub struct ContributorsConfig {
     pub excludes: String,
 }
 
+pub struct BusFactorConfig {
+    pub repository_path: String,
+    pub verbosity: Verbosity,
+    pub output: String,
+    pub includes: String,
+    pub excludes: String,
+}
+
 pub struct SpecificMetrics {
     pub path: String,
     pub cyclomatic: Option<i64>,
     pub cognitive: Option<i64>,
     pub loc: Option<i64>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ContributorKey {
+    email: String,
+    name: String,
+}
+
+impl ContributorKey {
+    pub fn new(email: String, name: String) -> Self {
+        Self { email, name }
+    }
+}
+
+impl Hash for ContributorKey {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.email.hash(state);
+    }
+}
+
+impl PartialEq for ContributorKey {
+    fn eq(&self, other: &Self) -> bool {
+        self.email == other.email
+    }
+}
+
+impl Eq for ContributorKey {}
+
+impl Display for ContributorKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
+        write!(f, "{}<{}>", self.name, self.email)
+    }
 }
 
 pub fn truncate(value: String, length: usize) -> String {
