@@ -1,4 +1,5 @@
 use crate::shared_types::{truncate, BusFactorConfig, ContributorKey};
+
 use git2::Repository;
 use std::collections::{HashMap, HashSet};
 
@@ -17,13 +18,14 @@ pub fn execute(config: BusFactorConfig) {
         Err(e) => panic!("failed to open: {}", e),
     };
 
-    let mut contributors: HashMap<ContributorKey, u32> = HashMap::new();
+    let mut file_contributors: HashMap<String, HashSet<ContributorKey>> = HashMap::new();
     let mut rev_walk = repo.revwalk().unwrap();
     rev_walk.push_head().unwrap();
     let mut i = 0;
     for elem in rev_walk {
         let oid = elem.unwrap();
         let commit = repo.find_commit(oid).unwrap();
+
         let author = commit.author();
         let name = author.name().unwrap();
         let email = author.email().unwrap();
@@ -50,10 +52,23 @@ pub fn execute(config: BusFactorConfig) {
                 let file_path = delta.new_file().path().unwrap();
                 //let file_mod_time = commit.time();
                 //let unix_time = file_mod_time.seconds();
-                // if file changes : https://docs.rs/git2/latest/git2/struct.DiffDelta.html
-
-                // StatusDelta (Delta) : https://docs.rs/git2/latest/git2/enum.Delta.html
+                let key = file_path.to_str().unwrap().to_string();
+                let h = file_contributors
+                    .entry(key.clone())
+                    .or_insert(HashSet::new());
+                h.insert(ContributorKey::new(email.to_string(), name.to_string()));
             }
         }
+
+        i = i + 1;
     }
+
+    println!("+-{:-<70}---{:-<10}-+", "", "");
+    println!("| {: <70} | {:10} |", "Path", "Bus factor");
+    println!("| {:=<70} | {:=<10} |", "", "");
+    for (p, cs) in file_contributors {
+        println!("| {: <70} | {:10} |", truncate(p, 70), cs.len());
+    }
+    println!("+-{:-<70}---{:-<10}-+", "", "");
+    println!("Total commits: {}", i);
 }

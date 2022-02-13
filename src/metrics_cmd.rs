@@ -35,7 +35,6 @@ pub fn execute(config: MetricsConfig) {
         m
     });
     let time_taken_sec = timer.elapsed();
-
     println!("+-{:-<80}---{:-<6}---{:-<9}---{:-<10}-+", "", "", "", "");
     println!(
         "| {: <80} | {:6} | {:9} | {:10} |",

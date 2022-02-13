@@ -1,9 +1,8 @@
 mod about_cmd;
-mod cli_setup;
 mod busfactor_cmd;
+mod cli_setup;
 mod contributors_cmd;
 mod metrics_cmd;
-mod repository;
 mod shared_types;
 
 use crate::cli_setup::CliCommand;
