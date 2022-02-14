@@ -1,26 +1,25 @@
 extern crate clap;
 
-use std::env;
-use std::path::{Path};
+use self::clap::{AppSettings, Arg, SubCommand};
+use crate::shared_types::{BusFactorConfig, ContributorsConfig, MetricsConfig, Verbosity};
 use clap::{App, ArgMatches};
 use path_absolutize::Absolutize;
-use self::clap::{AppSettings, Arg, SubCommand};
-use crate::shared_types::{ContributorsConfig, MetricsConfig, Verbosity};
+use std::env;
+use std::path::Path;
 
 pub enum CliCommand {
     About,
+    BusFactor(BusFactorConfig),
     Contributors(ContributorsConfig),
-    //BusFactor,
     Metrics(MetricsConfig),
     //Recommend,
-    Nothing
+    Nothing,
 }
 
-
-const ABOUT_CMD : &str = "about";
-const METRICS_CMD : &str = "metrics";
-const CONTRIBUTOR_CMD : &str = "contributors";
-//const BUSFACTOR_CMD : &str = "busfactor";
+const ABOUT_CMD: &str = "about";
+const METRICS_CMD: &str = "metrics";
+const CONTRIBUTOR_CMD: &str = "contributors";
+const BUSFACTOR_CMD: &str = "busfactor";
 
 pub fn capture_input() -> App<'static, 'static> {
     // NOTE: Setting Arg::default_value effectively disables this option as it will ensure that some argument is always present.
@@ -29,77 +28,117 @@ pub fn capture_input() -> App<'static, 'static> {
         .settings(&[AppSettings::ArgRequiredElseHelp, AppSettings::ColoredHelp])
         .version("0.1")
         .author("Devon B. <devon@chimplab.co>")
-        .about("Inspect source code for those hotspots based on source code change cadence")
+        .about("Inspect source code for those hotspots based on source code metrics and change cadence")
         // FLAG: SET VERBOSITY
-        .arg(Arg::with_name("verbosity")
-            .short("v")
-            .multiple(true)
-            .help("Sets to verbose mode"))
+        .arg(
+            Arg::with_name("verbosity")
+                .short("v")
+                .multiple(true)
+                .help("Sets to verbose mode"),
+        )
         // FLAG: SET TO SILENT
-        .arg(Arg::with_name("silent")
-            .short("s")
-            .help("Sets to silent mode"))
+        .arg(
+            Arg::with_name("silent")
+                .short("s")
+                .help("Sets to silent mode"),
+        )
         // OPTION: CONFIG FILE
-        .arg(Arg::with_name("config")
-            .short("c")
-            .long("config")
-            .value_name("CONFIG_FILE")
-            .help("Sets a custom config file")
-            .takes_value(true))
+        .arg(
+            Arg::with_name("config")
+                .short("c")
+                .long("config")
+                .value_name("CONFIG_FILE")
+                .help("Sets a custom config file")
+                .takes_value(true),
+        )
         // OPTION: OUTPUT FILE
-        .arg(Arg::with_name("output")
-            .short("o")
-            .long("output")
-            .value_name("REPORT_FILE")
-            .help("Sets the custom output file (default is to the console)")
-            .takes_value(true))
+        .arg(
+            Arg::with_name("output")
+                .short("o")
+                .long("output")
+                .value_name("REPORT_FILE")
+                .help("Sets the custom output file (default is to the console)")
+                .takes_value(true),
+        )
         // ARG: INCLUDE GLOB
-        .arg(Arg::with_name("include")
-            .short("i")
-            .long("include")
-            .value_name("INCLUDE")
-            .help("Glob representing explicit includes")
-            .takes_value(true))
+        .arg(
+            Arg::with_name("include")
+                .short("i")
+                .long("include")
+                .value_name("INCLUDE")
+                .help("Glob representing explicit includes")
+                .takes_value(true),
+        )
         // COMMAND: ABOUT
-        .subcommand(SubCommand::with_name(ABOUT_CMD)
-            .about("Tells more about the CLI tool")
-            .version("0.1")
-            .author("Devon B. <devon@chimplab.co>"))
+        .subcommand(
+            SubCommand::with_name(ABOUT_CMD)
+                .about("Tells more about this CLI tool")
+                .version("0.1")
+                .author("Devon B. <devon@chimplab.co>"),
+        )
+        // COMMAND: BUS FACTOR
+        .subcommand(
+            SubCommand::with_name(BUSFACTOR_CMD)
+                .about("Calculate bus factor of repository contributors")
+                .version("0.1")
+                .author("Devon B. <devon@chimplab.co>")
+                // ARG: SOURCE CODE REPOSITORY
+                .arg(
+                    Arg::with_name("SOURCE")
+                        .help("Sets the input path of source code to use")
+                        .required(true)
+                        .default_value("./")
+                        .index(1),
+                ),
+        )
         // COMMAND: CONTRIBUTOR
-        .subcommand(SubCommand::with_name(CONTRIBUTOR_CMD)
-            .about("Gathers statistics on repository contributors")
-            .version("0.1")
-            .author("Devon B. <devon@chimplab.co>")
-            // ARG: SOURCE CODE REPOSITORY
-            .arg(Arg::with_name("SOURCE")
-                .help("Sets the input path of source code to use")
-                .required(true)
-                .default_value("./")
-                .index(1)))
+        .subcommand(
+            SubCommand::with_name(CONTRIBUTOR_CMD)
+                .about("Gathers statistics on repository contributors")
+                .version("0.1")
+                .author("Devon B. <devon@chimplab.co>")
+                // ARG: SOURCE CODE REPOSITORY
+                .arg(
+                    Arg::with_name("SOURCE")
+                        .help("Sets the input path of source code to use")
+                        .required(true)
+                        .default_value("./")
+                        .index(1),
+                ),
+        )
         // COMMAND: METRICS
-        .subcommand(SubCommand::with_name(METRICS_CMD)
-            .about("Gathers code metrics on repository")
-            .version("0.1")
-            .author("Devon B. <devon@chimplab.co>")
-            // ARG: SOURCE CODE REPOSITORY
-            .arg(Arg::with_name("SOURCE")
-                .help("Sets the input path of source code to use")
-                .required(true)
-                .default_value("./")
-                .index(1)));
+        .subcommand(
+            SubCommand::with_name(METRICS_CMD)
+                .about("Gathers code metrics on repository")
+                .version("0.1")
+                .author("Devon B. <devon@chimplab.co>")
+                // ARG: SOURCE CODE REPOSITORY
+                .arg(
+                    Arg::with_name("SOURCE")
+                        .help("Sets the input path of source code to use")
+                        .required(true)
+                        .default_value("./")
+                        .index(1),
+                ),
+        );
     app
 }
 
 fn verbosity(input: ArgMatches) -> Verbosity {
     let occurrences = input.occurrences_of("verbosity");
-    let verbosity : Verbosity =
-        match occurrences {
-            0 => Verbosity::Error,
-            1 => Verbosity::Info,
-            2 => Verbosity::Debug,
-            3 => Verbosity::Trace,
-            _ => if input.is_present("silent") { Verbosity::Silent } else { Verbosity::Trace }
-        };
+    let verbosity: Verbosity = match occurrences {
+        0 => Verbosity::Error,
+        1 => Verbosity::Info,
+        2 => Verbosity::Debug,
+        3 => Verbosity::Trace,
+        _ => {
+            if input.is_present("silent") {
+                Verbosity::Silent
+            } else {
+                Verbosity::Trace
+            }
+        }
+    };
     verbosity
 }
 
@@ -114,42 +153,42 @@ pub fn repository_path(source: Option<&str>) -> String {
                 current_dir.join(base_dir)
             };
             String::from(display_path.absolutize().unwrap().to_str().unwrap())
-        },
-        None => {
-            String::from(current_dir.absolutize().unwrap().to_str().unwrap())
         }
+        None => String::from(current_dir.absolutize().unwrap().to_str().unwrap()),
     }
-
 }
 
+/// Parses the command line arguments into the correct config object for the passed in command
 pub fn parse(arg_matches: ArgMatches) -> CliCommand {
-    
     if arg_matches.subcommand_matches(ABOUT_CMD).is_some() {
         CliCommand::About
-    }
-    else if arg_matches.subcommand_matches(METRICS_CMD).is_some() {
-        let cmd_matches = arg_matches.subcommand_matches(METRICS_CMD).unwrap();
-        CliCommand::Metrics(
-            MetricsConfig{
-                repository_path: repository_path(cmd_matches.value_of("SOURCE")),
-                verbosity: verbosity(arg_matches),
-                output: "".to_string(),
-                includes: "".to_string(),
-                excludes: "".to_string(),
-            }
-        )
-    }
-    else if arg_matches.subcommand_matches(CONTRIBUTOR_CMD).is_some() {
+    } else if arg_matches.subcommand_matches(CONTRIBUTOR_CMD).is_some() {
         let cmd_matches = arg_matches.subcommand_matches(CONTRIBUTOR_CMD).unwrap();
-        CliCommand::Contributors(
-            ContributorsConfig{
-                repository_path: repository_path(cmd_matches.value_of("SOURCE")),
-                verbosity: verbosity(arg_matches),
-                output: "".to_string(),
-                includes: "".to_string(),
-                excludes: "".to_string(),
-            }
-        )
+        CliCommand::Contributors(ContributorsConfig {
+            repository_path: repository_path(cmd_matches.value_of("SOURCE")),
+            verbosity: verbosity(arg_matches),
+            output: "".to_string(),
+            includes: "".to_string(),
+            excludes: "".to_string(),
+        })
+    } else if arg_matches.subcommand_matches(BUSFACTOR_CMD).is_some() {
+        let cmd_matches = arg_matches.subcommand_matches(BUSFACTOR_CMD).unwrap();
+        CliCommand::BusFactor(BusFactorConfig {
+            repository_path: repository_path(cmd_matches.value_of("SOURCE")),
+            verbosity: verbosity(arg_matches),
+            output: "".to_string(),
+            includes: "".to_string(),
+            excludes: "".to_string(),
+        })
+    } else if arg_matches.subcommand_matches(METRICS_CMD).is_some() {
+        let cmd_matches = arg_matches.subcommand_matches(METRICS_CMD).unwrap();
+        CliCommand::Metrics(MetricsConfig {
+            repository_path: repository_path(cmd_matches.value_of("SOURCE")),
+            verbosity: verbosity(arg_matches),
+            output: "".to_string(),
+            includes: "".to_string(),
+            excludes: "".to_string(),
+        })
     }
     // else if arg_matches.subcommand_matches(CONTRIBUTOR_CMD).is_some() {
     //     let cmd_matches = arg_matches.subcommand_matches(CONTRIBUTOR_CMD).unwrap();
