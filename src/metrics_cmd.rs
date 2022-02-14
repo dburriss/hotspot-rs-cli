@@ -1,4 +1,4 @@
-use crate::shared_types::{truncate_left, MetricsConfig, SpecificMetrics};
+use crate::shared_types::{truncate_left, MetricsConfig, SpecificMetrics, FILE_GLOBS};
 extern crate globwalk;
 
 use self::globwalk::{DirEntry, GlobWalker, WalkError};
@@ -57,7 +57,7 @@ pub fn execute(config: MetricsConfig) {
             println!("Skipped: {}", m.path);
         }
     }
-    println!("--{:-<80}---{:-<6}---{:-<9}---{:-<10}--", "", "", "", "");
+    println!("+-{:-<80}---{:-<6}---{:-<9}---{:-<10}-+", "", "", "", "");
 
     if config.verbosity.is_not_quiet() {
         println!("Files scanned for metrics: {}", files_scanned);
@@ -133,17 +133,9 @@ fn get_function_space(contents: Vec<u8>, path_buf: &PathBuf) -> Option<FuncSpace
 fn setup_file_walker(
     base_dir: &Path,
 ) -> FilterMap<GlobWalker, fn(Result<DirEntry, WalkError>) -> Option<DirEntry>> {
-    globwalk::GlobWalkerBuilder::from_patterns(
-        base_dir,
-        &[
-            "*.{cs,c,cpp,fs,go,js,java,py,rs,ts,tsx}",
-            "!.*",
-            "!node_modules/",
-            "!target/",
-        ],
-    )
-    .build()
-    .unwrap()
-    .into_iter()
-    .filter_map(Result::ok)
+    globwalk::GlobWalkerBuilder::from_patterns(base_dir, &FILE_GLOBS)
+        .build()
+        .unwrap()
+        .into_iter()
+        .filter_map(Result::ok)
 }

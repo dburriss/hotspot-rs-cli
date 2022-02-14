@@ -1,8 +1,8 @@
-use crate::shared_types::{truncate, BusFactorConfig, ContributorKey};
-
+use crate::shared_types::{
+    is_supported_file, truncate_left, BusFactorConfig, ContributorKey, FILE_GLOBS,
+};
 use git2::Repository;
 use std::collections::{HashMap, HashSet};
-
 use std::path::Path;
 
 pub fn execute(config: BusFactorConfig) {
@@ -48,15 +48,20 @@ pub fn execute(config: BusFactorConfig) {
             } else {
                 panic!("`parent_count` unexpectedly {}", parent_count);
             };
+
             for delta in diff.deltas() {
                 let file_path = delta.new_file().path().unwrap();
                 //let file_mod_time = commit.time();
                 //let unix_time = file_mod_time.seconds();
-                let key = file_path.to_str().unwrap().to_string();
-                let h = file_contributors
-                    .entry(key.clone())
-                    .or_insert(HashSet::new());
-                h.insert(ContributorKey::new(email.to_string(), name.to_string()));
+                let path_str = file_path.to_str().unwrap();
+                let key = path_str.to_string();
+
+                if is_supported_file(FILE_GLOBS.to_vec(), path_str) {
+                    let h = file_contributors
+                        .entry(key.clone())
+                        .or_insert(HashSet::new());
+                    h.insert(ContributorKey::new(email.to_string(), name.to_string()));
+                }
             }
         }
 
@@ -67,7 +72,7 @@ pub fn execute(config: BusFactorConfig) {
     println!("| {: <70} | {:10} |", "Path", "Bus factor");
     println!("| {:=<70} | {:=<10} |", "", "");
     for (p, cs) in file_contributors {
-        println!("| {: <70} | {:10} |", truncate(p, 70), cs.len());
+        println!("| {: <70} | {:10} |", truncate_left(p, 70), cs.len());
     }
     println!("+-{:-<70}---{:-<10}-+", "", "");
     println!("Total commits: {}", i);

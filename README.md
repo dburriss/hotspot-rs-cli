@@ -16,6 +16,7 @@ Features:
 ### Bus factor
 
 - For each file, get authors and there additions to a file
-- [ ] Simple: Count number of authors (maybe with a percentage of additions?)
-- [ ] Change weighted: Count number of authors (maybe with a percentage of additions?)
+
+- [x] Simple: Count number of authors
+- [ ] Change weighted: Count number of authors  with a percentage of additions
 - [ ] Time weighted: Weight more recent additions by not only number but also recency

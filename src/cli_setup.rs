@@ -19,7 +19,7 @@ pub enum CliCommand {
 const ABOUT_CMD: &str = "about";
 const METRICS_CMD: &str = "metrics";
 const CONTRIBUTOR_CMD: &str = "contributors";
-const BUSFACTOR_CMD : &str = "busfactor";
+const BUSFACTOR_CMD: &str = "busfactor";
 
 pub fn capture_input() -> App<'static, 'static> {
     // NOTE: Setting Arg::default_value effectively disables this option as it will ensure that some argument is always present.
@@ -28,7 +28,7 @@ pub fn capture_input() -> App<'static, 'static> {
         .settings(&[AppSettings::ArgRequiredElseHelp, AppSettings::ColoredHelp])
         .version("0.1")
         .author("Devon B. <devon@chimplab.co>")
-        .about("Inspect source code for those hotspots based on source code change cadence")
+        .about("Inspect source code for those hotspots based on source code metrics and change cadence")
         // FLAG: SET VERBOSITY
         .arg(
             Arg::with_name("verbosity")
@@ -72,7 +72,7 @@ pub fn capture_input() -> App<'static, 'static> {
         // COMMAND: ABOUT
         .subcommand(
             SubCommand::with_name(ABOUT_CMD)
-                .about("Tells more about the CLI tool")
+                .about("Tells more about this CLI tool")
                 .version("0.1")
                 .author("Devon B. <devon@chimplab.co>"),
         )

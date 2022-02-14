@@ -3,6 +3,15 @@ use core::fmt;
 use std::fmt::Display;
 use std::hash::{Hash, Hasher};
 
+use globset::{Error, Glob, GlobSet, GlobSetBuilder};
+
+pub const FILE_GLOBS: [&'static str; 4] = [
+    "*.{cs,c,cpp,fs,go,js,java,py,rs,ts,tsx}",
+    "!.*",
+    "!node_modules/",
+    "!target/",
+];
+
 #[allow(dead_code)]
 #[derive(Debug)]
 pub enum Verbosity {
@@ -83,7 +92,7 @@ pub struct SpecificMetrics {
     pub loc: Option<i64>,
 }
 
-use chrono::{DateTime, Utc};
+//use chrono::{DateTime, Utc};
 
 // #[allow(dead_code)]
 // pub struct RepositoryInfo {
@@ -151,5 +160,44 @@ pub fn truncate_left(value: String, length: usize) -> String {
             .rev()
             .collect();
         return format!("...{1:.*}", length - 3, left_truncated);
+    }
+}
+
+fn build_globset(patterns: Vec<&str>) -> Result<GlobSet, Error> {
+    let mut glob_builder = GlobSetBuilder::new();
+    for p in patterns {
+        glob_builder.add(Glob::new(p)?);
+    }
+    glob_builder.build()
+}
+
+pub fn is_supported_file(patterns: Vec<&str>, path: &str) -> bool {
+    let glob_set = build_globset(patterns).unwrap();
+    glob_set.is_match(path)
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::shared_types::{is_supported_file, FILE_GLOBS};
+
+    #[test]
+    fn non_matching_path_is_not_supported() {
+        let path = "notamatch.xyz";
+        let supported = is_supported_file(FILE_GLOBS.to_vec(), path);
+        assert_eq!(supported, false);
+    }
+
+    #[test]
+    fn matching_path_is_supported() {
+        let path = "test.rs";
+        let supported = is_supported_file(FILE_GLOBS.to_vec(), path);
+        assert!(supported);
+    }
+
+    #[test]
+    fn pattern_match_ext_is_supported() {
+        let path = "test.rs";
+        let supported = is_supported_file(["**.rs"].to_vec(), path);
+        assert!(supported);
     }
 }
