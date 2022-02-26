@@ -1,8 +1,7 @@
 extern crate clap;
 
-use self::clap::{AppSettings, Arg, SubCommand};
-use crate::shared_types::{BusFactorConfig, ContributorsConfig, MetricsConfig, Verbosity};
-use clap::{App, ArgMatches};
+use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
+use hotspot::shared_types::{BusFactorConfig, ContributorsConfig, MetricsConfig, Verbosity};
 use path_absolutize::Absolutize;
 use std::env;
 use std::path::Path;

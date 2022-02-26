@@ -1,4 +1,4 @@
-use crate::shared_types::{truncate_left, MetricsConfig, SpecificMetrics, FILE_GLOBS};
+use hotspot::shared_types::{truncate_left, MetricsConfig, SpecificMetrics, FILE_GLOBS};
 extern crate globwalk;
 
 use self::globwalk::{DirEntry, GlobWalker, WalkError};
