@@ -1,24 +1,25 @@
-use crate::shared_types::{truncate, ContributorKey, ContributorsConfig};
 use git2::Repository;
+use hotspot::shared_types::{
+    is_supported_file, truncate_left, BusFactorConfig, ContributorKey, FILE_GLOBS,
+};
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
-// maybe this? https://docs.rs/git2/0.13.22/git2/struct.Repository.html#method.revwalk
-// get files see code here: https://github.com/rust-lang/git2-rs/issues/588#issuecomment-856757971
-// C# impl https://github.com/libgit2/libgit2sharp/pull/963/files
+use term_table::TableStyle;
 
-pub fn execute(config: ContributorsConfig) {
+pub fn execute(config: BusFactorConfig) {
     if config.verbosity.is_not_quiet() {
-        println!("Executing contributors command...");
+        println!("Executing busfactor command...");
         println!("Verbosity: {}", config.verbosity);
         println!("Path: {}", config.repository_path);
     }
+
     let base_dir = Path::new(&config.repository_path);
     let repo = match Repository::open(base_dir) {
         Ok(repo) => repo,
         Err(e) => panic!("failed to open: {}", e),
     };
-    let mut contributors: HashMap<ContributorKey, u32> = HashMap::new();
-    let mut contributor_files: HashMap<ContributorKey, HashSet<String>> = HashMap::new();
+
+    let mut file_contributors: HashMap<String, HashSet<ContributorKey>> = HashMap::new();
     let mut rev_walk = repo.revwalk().unwrap();
     rev_walk.push_head().unwrap();
     let mut i = 0;
@@ -29,7 +30,6 @@ pub fn execute(config: ContributorsConfig) {
         let author = commit.author();
         let name = author.name().unwrap();
         let email = author.email().unwrap();
-        let key = ContributorKey::new(email.to_string(), name.to_string());
         let parent_count = commit.parent_count();
         if parent_count == 0 || parent_count == 1 {
             let tree = commit.tree().unwrap();
@@ -49,37 +49,50 @@ pub fn execute(config: ContributorsConfig) {
             } else {
                 panic!("`parent_count` unexpectedly {}", parent_count);
             };
+
             for delta in diff.deltas() {
                 let file_path = delta.new_file().path().unwrap();
                 //let file_mod_time = commit.time();
                 //let unix_time = file_mod_time.seconds();
-                let h = contributor_files
-                    .entry(key.clone())
-                    .or_insert(HashSet::new());
-                h.insert(file_path.to_str().unwrap().to_string());
+                let path_str = file_path.to_str().unwrap();
+                let key = path_str.to_string();
+
+                if is_supported_file(FILE_GLOBS.to_vec(), path_str) {
+                    let h = file_contributors
+                        .entry(key.clone())
+                        .or_insert(HashSet::new());
+                    h.insert(ContributorKey::new(email.to_string(), name.to_string()));
+                }
             }
         }
 
         i = i + 1;
-        *contributors.entry(key.clone()).or_insert(0) += 1;
-        let _ = *contributor_files.entry(key).or_insert(HashSet::new());
     }
 
-    println!("+-{:-<70}---{:-<7}---{:-<13}-+", "", "", "");
-    println!(
-        "| {: <70} | {:7} | {:13} |",
-        "Contributor", "Commits", "Files touched"
-    );
-    println!("| {:=<70} | {:=<7} | {:=<13} |", "", "", "");
-    for k in contributors.keys() {
-        let contributor = truncate(k.to_string(), 70);
-        println!(
-            "| {: <70} | {:7} | {:13} |",
-            contributor,
-            contributors[k],
-            contributor_files[k].len()
-        );
+    output(config, file_contributors, i);
+}
+
+fn output(
+    _config: BusFactorConfig,
+    file_contributors: HashMap<String, HashSet<ContributorKey>>,
+    _commit_count: i32,
+) {
+    let mut table = term_table::Table::new();
+    table.max_column_width = 400;
+    table.style = TableStyle::thin();
+    table.add_row(term_table::row::Row::new(vec![
+        term_table::table_cell::TableCell::new("Path"),
+        term_table::table_cell::TableCell::new("Bus factor"),
+    ]));
+    for (p, cs) in file_contributors {
+        table.add_row(term_table::row::Row::new(vec![
+            term_table::table_cell::TableCell::new(truncate_left(p, 70)),
+            term_table::table_cell::TableCell::new_with_alignment(
+                cs.len(),
+                1,
+                term_table::table_cell::Alignment::Right,
+            ),
+        ]));
     }
-    println!("+-{:-<70}---{:-<7}---{:-<13}-+", "", "", "");
-    println!("Total commits: {}", i);
+    println!("{}", table.render());
 }

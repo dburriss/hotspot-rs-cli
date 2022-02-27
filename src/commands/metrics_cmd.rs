@@ -1,4 +1,5 @@
-use crate::shared_types::{truncate_left, MetricsConfig, SpecificMetrics, FILE_GLOBS};
+use hotspot::shared_types::{truncate_left, MetricsConfig, SpecificMetrics, FILE_GLOBS};
+use term_table::TableStyle;
 extern crate globwalk;
 
 use self::globwalk::{DirEntry, GlobWalker, WalkError};
@@ -35,31 +36,11 @@ pub fn execute(config: MetricsConfig) {
         m
     });
     let time_taken_sec = timer.elapsed();
-    println!("+-{:-<80}---{:-<6}---{:-<9}---{:-<10}-+", "", "", "", "");
-    println!(
-        "| {: <80} | {:6} | {:9} | {:10} |",
-        "File", "LoC", "Cognitive", "Cyclomatic"
-    );
-    println!("|={:=<80}==={:=<6}==={:=<9}==={:=<10}=|", "", "", "", "");
-    for m in metrics {
-        if m.loc.is_some() {
-            let loc = m.loc.map(|x| x.to_string()).unwrap_or(String::new());
-            let cog = m.cognitive.map(|x| x.to_string()).unwrap_or(String::new());
-            let cyc = m.cyclomatic.map(|x| x.to_string()).unwrap_or(String::new());
-            println!(
-                "| {:<80} | {:<6} | {:<9} | {:<10} |",
-                truncate_left(m.path, 80),
-                loc,
-                cog,
-                cyc
-            );
-        } else if config.verbosity.is_verbose() {
-            println!("Skipped: {}", m.path);
-        }
-    }
-    println!("+-{:-<80}---{:-<6}---{:-<9}---{:-<10}-+", "", "", "", "");
+    let metrics_iter = metrics.into_iter();
 
-    if config.verbosity.is_not_quiet() {
+    let v = config.verbosity.is_not_quiet();
+    output(config, metrics_iter);
+    if v {
         println!("Files scanned for metrics: {}", files_scanned);
         println!("Total files matched: {}", files_walked);
         println!("Metrics command completed in: {}s", time_taken_sec);
@@ -138,4 +119,64 @@ fn setup_file_walker(
         .unwrap()
         .into_iter()
         .filter_map(Result::ok)
+}
+
+fn output<I>(config: MetricsConfig, metrics: I)
+where
+    I: IntoIterator<Item = SpecificMetrics>,
+{
+    let mut table = term_table::Table::new();
+    table.max_column_width = 400;
+    table.style = TableStyle::thin();
+    table.add_row(term_table::row::Row::new(vec![
+        term_table::table_cell::TableCell::new("File"),
+        term_table::table_cell::TableCell::new("Lines"),
+        term_table::table_cell::TableCell::new("Cognitive"),
+        term_table::table_cell::TableCell::new("Cyclomatic"),
+    ]));
+    for m in metrics {
+        if m.loc.is_some() {
+            let loc = m.loc.map(|x| x.to_string()).unwrap_or(String::new());
+            let cog = m.cognitive.map(|x| x.to_string()).unwrap_or(String::new());
+            let cyc = m.cyclomatic.map(|x| x.to_string()).unwrap_or(String::new());
+            table.add_row(term_table::row::Row::new(vec![
+                term_table::table_cell::TableCell::new(truncate_left(m.path, 80)),
+                term_table::table_cell::TableCell::new_with_alignment(
+                    loc,
+                    1,
+                    term_table::table_cell::Alignment::Right,
+                ),
+                term_table::table_cell::TableCell::new_with_alignment(
+                    cog,
+                    1,
+                    term_table::table_cell::Alignment::Right,
+                ),
+                term_table::table_cell::TableCell::new_with_alignment(
+                    cyc,
+                    1,
+                    term_table::table_cell::Alignment::Right,
+                ),
+            ]));
+        } else if config.verbosity.is_verbose() {
+            table.add_row(term_table::row::Row::new(vec![
+                term_table::table_cell::TableCell::new(truncate_left(m.path, 80)),
+                term_table::table_cell::TableCell::new_with_alignment(
+                    "-",
+                    1,
+                    term_table::table_cell::Alignment::Right,
+                ),
+                term_table::table_cell::TableCell::new_with_alignment(
+                    "-",
+                    1,
+                    term_table::table_cell::Alignment::Right,
+                ),
+                term_table::table_cell::TableCell::new_with_alignment(
+                    "-",
+                    1,
+                    term_table::table_cell::Alignment::Right,
+                ),
+            ]));
+        }
+    }
+    println!("{}", table.render());
 }

@@ -1,11 +1,8 @@
-mod about_cmd;
-mod busfactor_cmd;
 mod cli_setup;
-mod contributors_cmd;
-mod metrics_cmd;
-mod shared_types;
-
 use crate::cli_setup::CliCommand;
+use crate::commands::{about_cmd, busfactor_cmd, contributors_cmd, metrics_cmd};
+
+mod commands;
 
 fn main() {
     let app = cli_setup::capture_input();
