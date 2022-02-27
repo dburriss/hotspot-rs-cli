@@ -2,6 +2,7 @@ use git2::Repository;
 use hotspot::shared_types::{truncate, ContributorKey, ContributorsConfig};
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
+use term_table::TableStyle;
 // maybe this? https://docs.rs/git2/0.13.22/git2/struct.Repository.html#method.revwalk
 // get files see code here: https://github.com/rust-lang/git2-rs/issues/588#issuecomment-856757971
 // C# impl https://github.com/libgit2/libgit2sharp/pull/963/files
@@ -65,21 +66,38 @@ pub fn execute(config: ContributorsConfig) {
         let _ = *contributor_files.entry(key).or_insert(HashSet::new());
     }
 
-    println!("+-{:-<70}---{:-<7}---{:-<13}-+", "", "", "");
-    println!(
-        "| {: <70} | {:7} | {:13} |",
-        "Contributor", "Commits", "Files touched"
-    );
-    println!("| {:=<70} | {:=<7} | {:=<13} |", "", "", "");
+    output(config, contributors, contributor_files, i);
+}
+
+fn output(
+    _config: ContributorsConfig,
+    contributors: HashMap<ContributorKey, u32>,
+    contributor_files: HashMap<ContributorKey, HashSet<String>>,
+    _commit_count: i32,
+) {
+    let mut table = term_table::Table::new();
+    table.max_column_width = 400;
+    table.style = TableStyle::thin();
+    table.add_row(term_table::row::Row::new(vec![
+        term_table::table_cell::TableCell::new("Contributors"),
+        term_table::table_cell::TableCell::new("Commits"),
+        term_table::table_cell::TableCell::new("Files Touched"),
+    ]));
     for k in contributors.keys() {
         let contributor = truncate(k.to_string(), 70);
-        println!(
-            "| {: <70} | {:7} | {:13} |",
-            contributor,
-            contributors[k],
-            contributor_files[k].len()
-        );
+        table.add_row(term_table::row::Row::new(vec![
+            term_table::table_cell::TableCell::new(contributor),
+            term_table::table_cell::TableCell::new_with_alignment(
+                contributors[k],
+                1,
+                term_table::table_cell::Alignment::Right,
+            ),
+            term_table::table_cell::TableCell::new_with_alignment(
+                contributor_files[k].len(),
+                1,
+                term_table::table_cell::Alignment::Right,
+            ),
+        ]));
     }
-    println!("+-{:-<70}---{:-<7}---{:-<13}-+", "", "", "");
-    println!("Total commits: {}", i);
+    println!("{}", table.render());
 }
