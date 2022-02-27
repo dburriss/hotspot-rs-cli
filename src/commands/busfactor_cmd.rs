@@ -4,6 +4,7 @@ use hotspot::shared_types::{
 };
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
+use term_table::TableStyle;
 
 pub fn execute(config: BusFactorConfig) {
     if config.verbosity.is_not_quiet() {
@@ -72,16 +73,26 @@ pub fn execute(config: BusFactorConfig) {
 }
 
 fn output(
-    config: BusFactorConfig,
+    _config: BusFactorConfig,
     file_contributors: HashMap<String, HashSet<ContributorKey>>,
-    commit_count: i32,
+    _commit_count: i32,
 ) {
-    println!("+-{:-<70}---{:-<10}-+", "", "");
-    println!("| {: <70} | {:10} |", "Path", "Bus factor");
-    println!("| {:=<70} | {:=<10} |", "", "");
+    let mut table = term_table::Table::new();
+    table.max_column_width = 400;
+    table.style = TableStyle::thin();
+    table.add_row(term_table::row::Row::new(vec![
+        term_table::table_cell::TableCell::new("Path"),
+        term_table::table_cell::TableCell::new("Bus factor"),
+    ]));
     for (p, cs) in file_contributors {
-        println!("| {: <70} | {:10} |", truncate_left(p, 70), cs.len());
+        table.add_row(term_table::row::Row::new(vec![
+            term_table::table_cell::TableCell::new(truncate_left(p, 70)),
+            term_table::table_cell::TableCell::new_with_alignment(
+                cs.len(),
+                1,
+                term_table::table_cell::Alignment::Right,
+            ),
+        ]));
     }
-    println!("+-{:-<70}---{:-<10}-+", "", "");
-    println!("Total commits: {}", commit_count);
+    println!("{}", table.render());
 }
