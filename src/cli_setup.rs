@@ -46,23 +46,23 @@ pub fn capture_input() -> App<'static, 'static> {
                 .help("Sets to silent mode"),
         )
         // OPTION: CONFIG FILE
-        .arg(
-            Arg::with_name("config")
-                .short("c")
-                .long("config")
-                .value_name("CONFIG_FILE")
-                .help("Sets a custom config file")
-                .takes_value(true),
-        )
+        // .arg(
+        //     Arg::with_name("config")
+        //         .short("c")
+        //         .long("config")
+        //         .value_name("CONFIG_FILE")
+        //         .help("Sets a custom config file")
+        //         .takes_value(true),
+        // )
         // OPTION: OUTPUT FILE
-        .arg(
-            Arg::with_name("output")
-                .short("o")
-                .long("output")
-                .value_name("REPORT_FILE")
-                .help("Sets the custom output file (default is to the console)")
-                .takes_value(true),
-        )
+        // .arg(
+        //     Arg::with_name("output")
+        //         .short("o")
+        //         .long("output")
+        //         .value_name("REPORT_FILE")
+        //         .help("Sets the custom output file (default is to the console)")
+        //         .takes_value(true),
+        // )
         // ARG: INCLUDE GLOB
         .arg(
             Arg::with_name("include")

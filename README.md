@@ -33,9 +33,7 @@ FLAGS:
     -v               Sets to verbose mode
 
 OPTIONS:
-    -c, --config <CONFIG_FILE>    Sets a custom config file
-    -i, --include <INCLUDE>       Glob representing explicit includes
-    -o, --output <REPORT_FILE>    Sets the custom output file (default is to the console)
+    -i, --include <INCLUDE>    Glob representing explicit includes
 
 SUBCOMMANDS:
     about           Tells more about this CLI tool
