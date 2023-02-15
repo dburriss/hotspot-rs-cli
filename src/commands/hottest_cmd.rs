@@ -110,6 +110,9 @@ fn output(_config: HottestConfig, file_touches: HashMap<String, HottestReport>) 
         .collect::<Vec<&HottestReport>>();
     file_touch_vec.sort_by_key(|k| k.touches);
     file_touch_vec.reverse(); // TODO: implement cmp on HottestReport and use that instead
+    if _config.top > 0 {
+        file_touch_vec.truncate(_config.top as usize);
+    }
     for row_data in file_touch_vec {
         table.add_row(term_table::row::Row::new(vec![
             term_table::table_cell::TableCell::new(truncate_left(row_data.path.to_string(), 70)),

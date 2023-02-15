@@ -109,21 +109,6 @@ pub fn capture_input() -> App<'static, 'static> {
                         .index(1),
                 ),
         )
-        // COMMAND: METRICS
-        .subcommand(
-            SubCommand::with_name(METRICS_CMD)
-                .about("Gathers code metrics on repository")
-                .version("0.1")
-                .author("Devon B. <devon@chimplab.co>")
-                // ARG: SOURCE CODE REPOSITORY
-                .arg(
-                    Arg::with_name("SOURCE")
-                        .help("Sets the input path of source code to use")
-                        .required(true)
-                        .default_value("./")
-                        .index(1),
-                ),
-        )
         // COMMAND: HOTTEST
         .subcommand(
             SubCommand::with_name(HOTTEST_CMD)
@@ -140,10 +125,25 @@ pub fn capture_input() -> App<'static, 'static> {
                 )
                 .arg(
                     Arg::with_name("TOP")
-                        .help("Sets the number on how many results are returned")
+                        .help("Sets the number on how many results are returned. '0' returns all.")
                         .required(false)
                         .default_value("0")
-                        .index(2),
+                        .long("top"),
+                ),
+        )
+        // COMMAND: METRICS
+        .subcommand(
+            SubCommand::with_name(METRICS_CMD)
+                .about("Gathers code metrics on repository")
+                .version("0.1")
+                .author("Devon B. <devon@chimplab.co>")
+                // ARG: SOURCE CODE REPOSITORY
+                .arg(
+                    Arg::with_name("SOURCE")
+                        .help("Sets the input path of source code to use")
+                        .required(true)
+                        .default_value("./")
+                        .index(1),
                 ),
         );
     app
@@ -205,15 +205,6 @@ pub fn parse(arg_matches: ArgMatches) -> CliCommand {
             includes: "".to_string(),
             excludes: "".to_string(),
         })
-    } else if arg_matches.subcommand_matches(METRICS_CMD).is_some() {
-        let cmd_matches = arg_matches.subcommand_matches(METRICS_CMD).unwrap();
-        CliCommand::Metrics(MetricsConfig {
-            repository_path: repository_path(cmd_matches.value_of("SOURCE")),
-            verbosity: verbosity(&arg_matches),
-            output: "".to_string(),
-            includes: "".to_string(),
-            excludes: "".to_string(),
-        })
     } else if arg_matches.subcommand_matches(HOTTEST_CMD).is_some() {
         let cmd_matches = arg_matches.subcommand_matches(HOTTEST_CMD).unwrap();
         CliCommand::Hottest(HottestConfig {
@@ -223,6 +214,15 @@ pub fn parse(arg_matches: ArgMatches) -> CliCommand {
             includes: "".to_string(),
             excludes: "".to_string(),
             top: cmd_matches.value_of("TOP").unwrap().parse().unwrap(),
+        })
+    } else if arg_matches.subcommand_matches(METRICS_CMD).is_some() {
+        let cmd_matches = arg_matches.subcommand_matches(METRICS_CMD).unwrap();
+        CliCommand::Metrics(MetricsConfig {
+            repository_path: repository_path(cmd_matches.value_of("SOURCE")),
+            verbosity: verbosity(&arg_matches),
+            output: "".to_string(),
+            includes: "".to_string(),
+            excludes: "".to_string(),
         })
     }
     // else if arg_matches.subcommand_matches(CONTRIBUTOR_CMD).is_some() {
