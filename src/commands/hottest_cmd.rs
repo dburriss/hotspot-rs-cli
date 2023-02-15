@@ -2,7 +2,7 @@ use git2::Repository;
 use hotspot::shared_types::{
     is_supported_file, truncate_left, truncate_right, HottestConfig, FILE_GLOBS,
 };
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::path::Path;
 use term_table::TableStyle;
 
@@ -12,8 +12,8 @@ use chrono::prelude::*;
 struct HottestReport {
     touches: u32,
     path: String,
-    created_at: i64,
-    created_by: String,
+    // created_at: i64,
+    // created_by: String,
     last_touched_at: i64,
     last_touched_by: String,
 }
@@ -75,12 +75,14 @@ pub fn execute(config: HottestConfig) {
                         .entry(path.clone())
                         .and_modify(|e| {
                             e.touches += 1;
+                            e.last_touched_by = identifier.to_string();
+                            e.last_touched_at = unix_time;
                         })
                         .or_insert(HottestReport {
                             touches: 1,
                             path,
-                            created_by: identifier.to_string(),
-                            created_at: unix_time,
+                            // created_by: identifier.to_string(),
+                            // created_at: unix_time,
                             last_touched_by: identifier.to_string(),
                             last_touched_at: unix_time,
                         });
@@ -106,7 +108,7 @@ fn output(_config: HottestConfig, file_touches: HashMap<String, HottestReport>) 
     ]));
     let mut file_touch_vec = file_touches
         .iter()
-        .map(|(path, row)| row)
+        .map(|(_path, row)| row)
         .collect::<Vec<&HottestReport>>();
     file_touch_vec.sort_by_key(|k| k.touches);
     file_touch_vec.reverse(); // TODO: implement cmp on HottestReport and use that instead
