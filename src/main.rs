@@ -1,6 +1,6 @@
 mod cli_setup;
 use crate::cli_setup::CliCommand;
-use crate::commands::{about_cmd, busfactor_cmd, contributors_cmd, metrics_cmd};
+use crate::commands::{about_cmd, busfactor_cmd, contributors_cmd, hottest_cmd, metrics_cmd};
 
 mod commands;
 
@@ -21,6 +21,8 @@ fn main() {
         CliCommand::BusFactor(config) => busfactor_cmd::execute(config),
         CliCommand::Metrics(config) => {
             metrics_cmd::execute(config);
-        } //CliCommand::Recommend => {}
+        }
+        CliCommand::Hottest(config) => hottest_cmd::execute(config),
+        //CliCommand::Recommend => {}
     };
 }

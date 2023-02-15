@@ -80,6 +80,16 @@ pub mod shared_types {
         pub cognitive: Option<i64>,
         pub loc: Option<i64>,
     }
+
+    pub struct HottestConfig {
+        pub repository_path: String,
+        pub verbosity: Verbosity,
+        pub output: String,
+        pub includes: String,
+        pub excludes: String,
+        pub top: u32,
+    }
+
     //use chrono::{DateTime, Utc};
     // #[allow(dead_code)]
     // pub struct RepositoryInfo {
@@ -118,7 +128,7 @@ pub mod shared_types {
             write!(f, "{}<{}>", self.name, self.email)
         }
     }
-    pub fn truncate(value: String, length: usize) -> String {
+    pub fn truncate_right(value: String, length: usize) -> String {
         if value.len() <= length {
             value
         } else {

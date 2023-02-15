@@ -1,5 +1,5 @@
 use git2::Repository;
-use hotspot::shared_types::{truncate, ContributorKey, ContributorsConfig};
+use hotspot::shared_types::{truncate_right, ContributorKey, ContributorsConfig};
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use term_table::TableStyle;
@@ -84,7 +84,7 @@ fn output(
         term_table::table_cell::TableCell::new("Files Touched"),
     ]));
     for k in contributors.keys() {
-        let contributor = truncate(k.to_string(), 70);
+        let contributor = truncate_right(k.to_string(), 70);
         table.add_row(term_table::row::Row::new(vec![
             term_table::table_cell::TableCell::new(contributor),
             term_table::table_cell::TableCell::new_with_alignment(
