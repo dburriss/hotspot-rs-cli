@@ -1,13 +1,21 @@
 use git2::Repository;
-use hotspot::shared_types::{is_supported_file, truncate_left, HottestConfig, FILE_GLOBS};
+use hotspot::shared_types::{
+    is_supported_file, truncate_left, truncate_right, HottestConfig, FILE_GLOBS,
+};
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use term_table::TableStyle;
 
+extern crate chrono;
+use chrono::prelude::*;
+
 struct HottestReport {
     touches: u32,
     path: String,
-    last_touched: Date,
+    created_at: i64,
+    created_by: String,
+    last_touched_at: i64,
+    last_touched_by: String,
 }
 
 pub fn execute(config: HottestConfig) {
@@ -23,7 +31,7 @@ pub fn execute(config: HottestConfig) {
         Err(e) => panic!("failed to open: {}", e),
     };
 
-    let mut file_touches: HashMap<String, u32> = HashMap::new();
+    let mut file_touches: HashMap<String, HottestReport> = HashMap::new();
     let mut rev_walk = repo.revwalk().unwrap();
     rev_walk.push_head().unwrap();
     let mut i = 0;
@@ -34,6 +42,7 @@ pub fn execute(config: HottestConfig) {
         let author = commit.author();
         let name = author.name().unwrap();
         let email = author.email().unwrap();
+        let identifier = format!("{}<{}>", name, email);
         let parent_count = commit.parent_count();
         if parent_count == 0 || parent_count == 1 {
             let tree = commit.tree().unwrap();
@@ -56,16 +65,25 @@ pub fn execute(config: HottestConfig) {
 
             for delta in diff.deltas() {
                 let file_path = delta.new_file().path().unwrap();
-                //let file_mod_time = commit.time();
-                //let unix_time = file_mod_time.seconds();
+                let file_mod_time = commit.time();
+                let unix_time = file_mod_time.seconds();
                 let path_str = file_path.to_str().unwrap();
-                let key = path_str.to_string();
+                let path = path_str.to_string();
 
                 if is_supported_file(FILE_GLOBS.to_vec(), path_str) {
                     file_touches
-                        .entry(key.clone())
-                        .and_modify(|e| *e += 1)
-                        .or_insert(1);
+                        .entry(path.clone())
+                        .and_modify(|e| {
+                            e.touches += 1;
+                        })
+                        .or_insert(HottestReport {
+                            touches: 1,
+                            path,
+                            created_by: identifier.to_string(),
+                            created_at: unix_time,
+                            last_touched_by: identifier.to_string(),
+                            last_touched_at: unix_time,
+                        });
                 }
             }
         }
@@ -73,31 +91,42 @@ pub fn execute(config: HottestConfig) {
         i = i + 1;
     }
 
-    output(config, file_touches, i);
+    output(config, file_touches);
 }
 
-fn output(_config: HottestConfig, file_touches: HashMap<String, u32>, _commit_count: i32) {
+fn output(_config: HottestConfig, file_touches: HashMap<String, HottestReport>) {
     let mut table = term_table::Table::new();
     table.max_column_width = 400;
     table.style = TableStyle::thin();
     table.add_row(term_table::row::Row::new(vec![
         term_table::table_cell::TableCell::new("Path"),
         term_table::table_cell::TableCell::new("Changes"),
+        term_table::table_cell::TableCell::new("Last changed by"),
+        term_table::table_cell::TableCell::new("Last changed at"),
     ]));
     let mut file_touch_vec = file_touches
         .iter()
-        .map(|(path, touches)| (path.to_string(), touches.clone()))
-        .collect::<Vec<(String, u32)>>();
-    file_touch_vec.sort_by_key(|k| k.1);
-    file_touch_vec.reverse();
-    for (p, ts) in file_touch_vec {
+        .map(|(path, row)| row)
+        .collect::<Vec<&HottestReport>>();
+    file_touch_vec.sort_by_key(|k| k.touches);
+    file_touch_vec.reverse(); // TODO: implement cmp on HottestReport and use that instead
+    for row_data in file_touch_vec {
         table.add_row(term_table::row::Row::new(vec![
-            term_table::table_cell::TableCell::new(truncate_left(p, 70)),
+            term_table::table_cell::TableCell::new(truncate_left(row_data.path.to_string(), 70)),
             term_table::table_cell::TableCell::new_with_alignment(
-                ts,
+                row_data.touches,
                 1,
                 term_table::table_cell::Alignment::Right,
+                //
             ),
+            term_table::table_cell::TableCell::new(truncate_right(
+                row_data.last_touched_by.to_string(),
+                70,
+            )),
+            term_table::table_cell::TableCell::new(truncate_right(
+                NaiveDateTime::from_timestamp(row_data.last_touched_at, 0).to_string(),
+                70,
+            )),
         ]));
     }
     println!("{}", table.render());

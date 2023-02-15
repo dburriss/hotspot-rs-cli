@@ -128,7 +128,7 @@ pub mod shared_types {
             write!(f, "{}<{}>", self.name, self.email)
         }
     }
-    pub fn truncate(value: String, length: usize) -> String {
+    pub fn truncate_right(value: String, length: usize) -> String {
         if value.len() <= length {
             value
         } else {
